@@ -1,3 +1,5 @@
+
+import 'package:attendence_app_pwc/api/local_auth_api.dart';
 import 'package:crypto/crypto.dart';
 //import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'globals.dart' as globals;
@@ -30,6 +32,7 @@ class _Auth_ScreenState extends State<Auth_Screen> {
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
   GetStorage box = GetStorage();
+  var emailf ,passwordf;
   final _emailFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
   final _formKey1 = GlobalKey<FormState>();
@@ -43,7 +46,34 @@ class _Auth_ScreenState extends State<Auth_Screen> {
   bool isDeviceConnected = false;
   bool isAlertSet = false;
   bool islogin = false;
+  bool isfingerprintenable=false;
 
+void checkflogin()async{
+  
+  SharedPreferences prefinger = await SharedPreferences.getInstance();
+    String? val1 = prefinger.getString("email12");
+    String? val2 = prefinger.getString("SHA12");
+    String? val3 = prefinger.getString("sval12");
+    //  print('before');
+    // print('email: $val1');
+    // print('SHA1: $val2');
+    // print('sval: $val3');
+    if(val1 != null && val2 != null && val3 != null){
+      //print('LOGIN SCREEN');
+      //print('fingerprint enable');
+      setState(() {
+         emailf=val1;
+        passwordf=val2;
+        isfingerprintenable=true;
+      });
+    }
+    else{
+      //print('fingerprint disable');
+      setState(() {
+        isfingerprintenable=false;
+      });
+    }
+}
   @override
   void initState() {
     _passwordVisible = false;
@@ -52,6 +82,7 @@ class _Auth_ScreenState extends State<Auth_Screen> {
     // isKeyBoardvisible =
     //     KeyboardVisibilityProvider.isKeyboardVisible(context);
     checkLogin();
+    checkflogin();
     initConnectivity();
     _connectivitySubscription =
         _connectivity.onConnectivityChanged.listen(_UpdateConnectionState);
@@ -165,6 +196,7 @@ class _Auth_ScreenState extends State<Auth_Screen> {
       _formKey1.currentState!.save();
       _formKey2.currentState!.save();
       try {
+        
         var SHA1Password = utf8.encode(password);
         var sha1Result = sha1.convert(SHA1Password);
         //  print(email);
@@ -178,6 +210,7 @@ class _Auth_ScreenState extends State<Auth_Screen> {
         //     'password' : password,//pistol
         //   }
         // );
+       
         Response response = await post(Uri.parse('${globals.apiurl}token'),
             headers: {
               "Accept": "application/json",
@@ -215,7 +248,7 @@ class _Auth_ScreenState extends State<Auth_Screen> {
             textColor: Colors.white,
             fontSize: 16,
           );
-          //print('failed');
+          print('failed');
         }
       } catch (e) {
         print(e.toString());
@@ -232,6 +265,65 @@ class _Auth_ScreenState extends State<Auth_Screen> {
         //print(e.toString());
       }
     }
+  }
+
+  void fingerprintlogin(String email, String SHA) async {
+    print("Finger Print login successfully");
+      try {
+        Response response = await post(Uri.parse('${globals.apiurl}token'),
+            headers: {
+              "Accept": "application/json",
+              "content-type": "application/json"
+            },
+            body: jsonEncode({
+              'email': email, //eve.holt@reqres.in
+              'password': SHA //pistol
+            })).timeout(const Duration(seconds: 25));
+
+        if (response.statusCode == 200) {
+          // box.write('email',email);
+          // print(box.read('email').toString());
+          // box.remove('email');
+          setState(() {
+            islogin = true;
+          });
+          var data = jsonDecode(response.body.toString());
+          //print(data);
+          // print("token");
+          // print(data['token']);
+          //print('Login successfully');
+          pageRoute(data['password'], data['email'], data['displayName'],
+              SHA, data['userId'].toString());
+        } else {
+          //print("Soaub ${response.body}");
+          Fluttertoast.showToast(
+            //msg: response.statusCode.toString() + response.body,
+            msg: "Either Server Error Found or Enter Wrong Credentials",
+            //toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 5,
+            //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+            backgroundColor: Colors.black,
+            textColor: Colors.white,
+            fontSize: 16,
+          );
+          //print('failed');
+        }
+      } catch (e) {
+        print(e.toString());
+        Fluttertoast.showToast(
+          msg: "Internet is not working",
+          //toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 5,
+          //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+          backgroundColor: Colors.black,
+          textColor: Colors.white,
+          fontSize: 16,
+        );
+        //print(e.toString());
+      }
+    
   }
 
   void pageRoute(String token, String email1, String username2, String SHA1,
@@ -294,7 +386,7 @@ class _Auth_ScreenState extends State<Auth_Screen> {
                       height: height / 5000,
                     )
                   : Container(
-                      height: height / 2.5,
+                      height: height / 3.3,
                       margin: const EdgeInsets.only(
                           //top: 20,
                           //left: 130,
@@ -556,7 +648,7 @@ class _Auth_ScreenState extends State<Auth_Screen> {
                   right: 40,
                 ),
                 child: SizedBox(
-                  height: 90,
+                  height: 75,
                   width: double.infinity,
                   child: FloatingActionButton.large(
                     //<-- SEE HERE
@@ -570,7 +662,7 @@ class _Auth_ScreenState extends State<Auth_Screen> {
                     },
                     child: Icon(
                       Icons.login,
-                      size: 55,
+                      size: 40,
                       color: !islogin ? Colors.white : Colors.amber,
                     ),
                   ),
@@ -608,6 +700,56 @@ class _Auth_ScreenState extends State<Auth_Screen> {
                     ),
                   ],
                 ),
+              ),
+               const SizedBox(
+                height: 15,
+              ),
+              Container(
+                margin: EdgeInsets.only(left: width/2.4),
+                child: Row(children: [
+                  // Text('Login with Finger Print'),
+                  // SizedBox(width: 5,),
+                 isfingerprintenable? IconButton(
+                    onPressed: () async {
+                       final isAuthenticated = await LocalAuthApi.authenticate();
+                       if(isAuthenticated){
+                          fingerprintlogin(emailf,passwordf );
+                       }
+                      // final isAuthenticated = await LocalAuthApi.authenticate();
+                      // isAuthenticated
+                      //     ? Navigator.of(context).pushReplacement(
+                      //         MaterialPageRoute(builder: (context) => HomePage()),
+                      //       )
+                      //     : TweenAnimationBuilder(
+                      //         tween: Tween(begin: 30.0, end: 0),
+                      //         duration: const Duration(seconds: 30),
+                      //         builder: (context, value, child) {
+                      //           double val = value as double;
+                      //           int time = val.toInt();
+                      //           return Text(
+                      //             "Retry in $time to continue",
+                      //             style: const TextStyle(
+                      //               fontSize: 16,
+                      //             ),
+                      //             textAlign: TextAlign.center,
+                      //           );
+                      //         },
+                      //         onEnd: () {
+                      //           Navigator.push(
+                      //             context,
+                      //             MaterialPageRoute(
+                      //               builder: (context) => FingerprintPage(),
+                      //             ),
+                      //           );
+                      //         },
+                      //       );
+                    },
+                    icon: const Icon(
+                      Icons.fingerprint_outlined,
+                    ),
+                    iconSize: 40,
+                  ):SizedBox(),
+                ],),
               ),
               SizedBox(height: 30,)
               // SizedBox(

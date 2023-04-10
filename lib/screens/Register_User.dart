@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:attendence_app_pwc/screens/auth_screen.dart';
 import 'globals.dart' as globals;
 import 'package:flutter/gestures.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';

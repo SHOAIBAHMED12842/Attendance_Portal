@@ -1,6 +1,8 @@
 // ignore_for_file: unnecessary_null_comparison
 import 'dart:async';
 import 'dart:convert';
+import 'package:attendence_app_pwc/api/local_auth_api.dart';
+
 import 'globals.dart' as globals;
 //import 'dart:typed_data';
 import 'package:attendence_app_pwc/screens/auth_screen.dart';
@@ -35,6 +37,9 @@ class _UserDashboardState extends State<UserDashboard> {
   //     systemNavigationBarIconBrightness: Brightness.light,
   //     systemNavigationBarDividerColor: Colors.blue,
   //   );
+  bool isSwitched = false;
+  var switchf = '0';
+  //var textValue = 'Switch is OFF';
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
   File? imageFile;
@@ -79,11 +84,111 @@ class _UserDashboardState extends State<UserDashboard> {
   late StreamSubscription subscription;
   bool isDeviceConnected = false;
   bool isAlertSet = false;
+  void checkflogin() async {
+    SharedPreferences prefinger = await SharedPreferences.getInstance();
+    String? val1 = prefinger.getString("email12");
+    String? val2 = prefinger.getString("SHA12");
+    String? val3 = prefinger.getString("sval12");
+    // print('before');
+    // print('email: $val1');
+    // print('SHA1: $val2');
+    // print('sval: $val3');
+    //print(email);
+    if (val3 != null && val1 != null) {
+      //print("finger email  $email");
+      if (val1 != email) {
+        //  print('fingerprint disable');
+        //  print('first condtion');
+        setState(() {
+          isSwitched = false;
+        });
+        SharedPreferences prefinger = await SharedPreferences.getInstance();
+        await prefinger.remove("email12");
+        await prefinger.remove("SHA12");
+        await prefinger.remove("sval12");
+      } else {
+        //print('fingerprint enable');
+        setState(() {
+          isSwitched = true;
+        });
+      }
+      // print('fingerprint enable');
+      // setState(() {
+      //   isSwitched = true;
+      // });
+    } else {
+      // print('fingerprint disable');
+      // print('last condtion');
+      setState(() {
+        isSwitched = false;
+      });
+    }
+  }
+
+  void toggleSwitch(bool value) async {
+    final isAvailable = await LocalAuthApi.hasBiometrics();
+    final isDeviceSupported = await LocalAuthApi.isDeviceSupported();
+    if (isSwitched == false) {
+      if(isAvailable && isDeviceSupported){
+          setState(() {
+        isSwitched = true;
+        switchf = '1';
+      });
+      SharedPreferences prefinger = await SharedPreferences.getInstance();
+      await prefinger.setString('email12', email);
+      await prefinger.setString('SHA12', SHA1);
+      await prefinger.setString('sval12', switchf);
+      }
+      else{
+        setState(() {
+        isSwitched = false;
+        switchf = '0';
+      });
+      }
+     
+      Fluttertoast.showToast(
+        msg: "Finger Print Login Enable Successfully",
+        //toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 5,
+        //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+        backgroundColor: Colors.black,
+        textColor: Colors.white,
+        fontSize: 16,
+      );
+      print('Switch Button is ON');
+    } else {
+      setState(() {
+        isSwitched = false;
+        switchf = '0';
+      });
+      SharedPreferences prefinger = await SharedPreferences.getInstance();
+      String? val1 = prefinger.getString("email12");
+      String? val2 = prefinger.getString("SHA12");
+      String? val3 = prefinger.getString("sval12");
+      await prefinger.remove("email12");
+      await prefinger.remove("SHA12");
+      await prefinger.remove("sval12");
+
+      Fluttertoast.showToast(
+        msg: "Finger Print Login Disable Successfully",
+        //toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 5,
+        //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+        backgroundColor: Colors.black,
+        textColor: Colors.white,
+        fontSize: 16,
+      );
+      print('Switch Button is OFF');
+    }
+  }
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+
     // WidgetsBinding.instance.addPostFrameCallback((_) {
     //     SystemChrome.setSystemUIOverlayStyle(overlayStyle);
     //   });
@@ -191,7 +296,7 @@ class _UserDashboardState extends State<UserDashboard> {
     var format = DateFormat("HH:mm:ss");
     var start = format.parse(time3);
     var end = format.parse(systime);
-    
+
     // print(start);
     // print(end);
     //if (start.isAfter(end)) {
@@ -784,7 +889,10 @@ class _UserDashboardState extends State<UserDashboard> {
         email = pref.getString("email")!;
         userid = pref.getString("id")!;
       });
+      print(email);
+      //print(email);
       getAllCategory();
+      checkflogin();
       print('pre token: $token');
       print("id: $userid");
       // print('SHA1: $SHA1');
@@ -982,11 +1090,19 @@ class _UserDashboardState extends State<UserDashboard> {
       showAlert(context);
     } else {
       SharedPreferences pref = await SharedPreferences.getInstance();
-      await pref.clear();
+      await pref.remove('login');
+      await pref.remove('username');
+      await pref.remove('SHA1');
+      await pref.remove('email');
+      await pref.remove('id');
       SharedPreferences pref1 = await SharedPreferences.getInstance();
-      await pref1.clear();
+      await pref1.remove('login');
       SharedPreferences pref2 = await SharedPreferences.getInstance();
-      await pref2.clear();
+      await pref2.remove('status');
+      await pref2.remove('CID');
+      await pref2.remove('time');
+      await pref2.remove('time2');
+
       Fluttertoast.showToast(
         msg: "$username Logout Attendance Portal",
         //toastLength: Toast.LENGTH_SHORT,
@@ -1073,6 +1189,32 @@ class _UserDashboardState extends State<UserDashboard> {
                         ),
                       ),
                     ),
+                    SizedBox(
+                      width: width / 9,
+                    ),
+                    const Icon(Icons.fingerprint_rounded,
+                        color: Colors.blueGrey),
+                    SizedBox(
+                      width: 5,
+                    ),
+                    Text(
+                      'Finger Print',
+                      style: TextStyle(
+                        fontSize: width / 21,
+                        color: const Color.fromRGBO(209, 57, 13, 1),
+                      ),
+                    ),
+                    Transform.scale(
+                        scale: 1.2,
+                        child: Switch(
+                          onChanged: toggleSwitch,
+                          value: isSwitched,
+                          activeColor: Color.fromRGBO(209, 57, 13, 1),
+                          activeTrackColor: Color.fromRGBO(250, 213, 213, 1),
+                          inactiveThumbColor: Colors.white,
+                          inactiveTrackColor:
+                              Color.fromARGB(255, 190, 186, 186),
+                        )),
                   ],
                 ),
               ),
