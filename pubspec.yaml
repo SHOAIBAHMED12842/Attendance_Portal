@@ -57,6 +57,8 @@ dependencies:
   fluttertoast: ^8.1.1
   image_picker: ^0.8.6+1
   google_fonts: ^4.0.3
+  local_auth: ^2.1.6
+  
   dependencies:
   #flutter_geocoder: ^0.2.2-nullsafety
   #connectivity_plus: ^3.0.2
