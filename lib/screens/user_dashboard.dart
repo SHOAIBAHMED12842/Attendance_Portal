@@ -26,7 +26,12 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:io';
 
 class UserDashboard extends StatefulWidget {
-  const UserDashboard({super.key});
+  String token1 = "";
+  String userid1 = "";
+  String SHA11 = "";
+  String email1 = "";
+  UserDashboard(this.token1, this.SHA11, this.email1, this.userid1,
+      {super.key});
   @override
   State<UserDashboard> createState() => _UserDashboardState();
 }
@@ -69,6 +74,7 @@ class _UserDashboardState extends State<UserDashboard> {
   bool _isclient = false;
   bool _ischeckin = false;
   bool _ischeckout = false;
+  bool _isusercheckin = false;
   bool _istimebox = false;
   String? marking; //no radio button will be selected
   var format1 = DateFormat("HH:mm");
@@ -84,21 +90,200 @@ class _UserDashboardState extends State<UserDashboard> {
   late StreamSubscription subscription;
   bool isDeviceConnected = false;
   bool isAlertSet = false;
+  var lastcheckintime;
+  String? time24, time12;
+  DateTime? parsedTime;
+  var attendencedate;
+  var _isnegative = false;
+
+  void getusername() async {
+    try {
+      Response response = await post(Uri.parse('${globals.apiurl}token'),
+          headers: {
+            "Accept": "application/json",
+            "content-type": "application/json"
+          },
+          body: jsonEncode({
+            'email': email, //eve.holt@reqres.in
+            'password': SHA1 //pistol
+          })).timeout(const Duration(seconds: 25));
+
+      if (response.statusCode == 200) {
+        var data1 = jsonDecode(response.body.toString());
+        setState(() {
+          username = data1['displayName'];
+        });
+        _getAttendenceData();
+      } else {
+        Fluttertoast.showToast(
+          //msg: response.statusCode.toString() + response.body,
+          msg: "Server Error Found/Failed to Show Categories",
+          //toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 5,
+          //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+          backgroundColor: Colors.black,
+          textColor: Colors.white,
+          fontSize: 16,
+        );
+      }
+    } catch (e) {}
+  }
+
+  List _loadedattendence = [];
+  var _lastattendence;
+  var _isattendenceloading = false;
+
+  // The function that fetches data from the API
+  Future<void> _getAttendenceData() async {
+    Fluttertoast.showToast(
+      msg: "Looking for previous attendence Kindly wait!",
+      //toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      timeInSecForIosWeb: 5,
+      //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+      backgroundColor: Colors.black,
+      textColor: Colors.white,
+      fontSize: 16,
+    );
+    try {
+      //List<String> client_categories = [];
+      Response response = await get(
+        Uri.parse('${globals.apiurl}attendance/${userid}'),
+        headers: {
+          "Accept": "application/json",
+          "content-type": "application/json",
+          'Authorization': 'Bearer ${token}'
+        },
+      ).timeout(const Duration(seconds: 50));
+      print('view');
+      print(response.statusCode);
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body.toString());
+        _loadedattendence = data;
+        print(_loadedattendence);
+        if (_loadedattendence.isNotEmpty) {
+          print(_loadedattendence);
+          setState(() {
+            _lastattendence = _loadedattendence[_loadedattendence.length - 1];
+          });
+          if ((_lastattendence["attendanceType"] == "CHECK-IN" ||
+              _lastattendence["attendanceType"] == "i")) {
+            print('user check in');
+            print(_lastattendence["client"]["fldID"]);
+            print(_lastattendence["attendanceType"]);
+            time24 =
+                _lastattendence["attendanceTime"].toString().substring(11, 16);
+            parsedTime = DateFormat('HH:mm').parse(time24!);
+            String date =
+                _lastattendence["attendanceTime"].toString().substring(0, 10);
+            DateTime dateTime = DateTime.parse(date);
+            setState(() {
+              value = '1';
+              _ischeckin = true;
+              _isattendenceloading = false;
+              clientid = _lastattendence["client"]["fldID"].toString();
+              time12 = DateFormat('h:mm a').format(parsedTime!);
+              time3 = _lastattendence["attendanceTime"]
+                  .toString()
+                  .substring(11, 19);
+              attendencedate = DateFormat('dd-MMMM-yyyy').format(dateTime);
+            });
+            // print(time3);
+            // print(clientid);
+            Fluttertoast.showToast(
+              msg: "Last Check-in at ${_lastattendence["client"]["fldName"]}",
+              //toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.BOTTOM,
+              timeInSecForIosWeb: 5,
+              //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+              backgroundColor: Colors.black,
+              textColor: Colors.white,
+              fontSize: 16,
+            );
+            check_two_times_is_before();
+            _timerstart();
+            Fluttertoast.showToast(
+              //msg: response.statusCode.toString() + response.body,
+              msg: "Clients is ready to show!",
+              //toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.BOTTOM,
+              timeInSecForIosWeb: 5,
+              //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+              backgroundColor: Colors.black,
+              textColor: Colors.white,
+              fontSize: 16,
+            );
+          } else {
+            print('user checkout');
+            print(_lastattendence["client"]["fldID"]);
+            print(_lastattendence["attendanceType"]);
+            setState(() {
+              value = '0';
+              _ischeckin = false;
+              _isattendenceloading = true;
+              clientid = "";
+              //lastcheckintime="";
+              time12 = "";
+              attendencedate = "";
+            });
+            Fluttertoast.showToast(
+              msg:
+                  "Last Check-out at ${_lastattendence["client"]["fldName"]} now you can select client",
+              //toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.BOTTOM,
+              timeInSecForIosWeb: 5,
+              //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+              backgroundColor: Colors.black,
+              textColor: Colors.white,
+              fontSize: 16,
+            );
+            Fluttertoast.showToast(
+              //msg: response.statusCode.toString() + response.body,
+              msg: "Clients is ready to show!",
+              //toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.BOTTOM,
+              timeInSecForIosWeb: 5,
+              //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+              backgroundColor: Colors.black,
+              textColor: Colors.white,
+              fontSize: 16,
+            );
+          }
+        } else {
+          setState(() {
+            value = '0';
+            _ischeckin = false;
+            _isattendenceloading = true;
+            clientid = "";
+            //lastcheckintime="";
+            time12 = "";
+            attendencedate = "";
+          });
+          Fluttertoast.showToast(
+            msg: "$username is a new user",
+            //toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 5,
+            //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+            backgroundColor: Colors.black,
+            textColor: Colors.white,
+            fontSize: 16,
+          );
+        }
+      }
+    } catch (e) {
+      print(e.toString());
+    }
+  }
+
   void checkflogin() async {
     SharedPreferences prefinger = await SharedPreferences.getInstance();
     String? val1 = prefinger.getString("email12");
     String? val2 = prefinger.getString("SHA12");
     String? val3 = prefinger.getString("sval12");
-    // print('before');
-    // print('email: $val1');
-    // print('SHA1: $val2');
-    // print('sval: $val3');
-    //print(email);
     if (val3 != null && val1 != null) {
-      //print("finger email  $email");
       if (val1 != email) {
-        //  print('fingerprint disable');
-        //  print('first condtion');
         setState(() {
           isSwitched = false;
         });
@@ -112,13 +297,7 @@ class _UserDashboardState extends State<UserDashboard> {
           isSwitched = true;
         });
       }
-      // print('fingerprint enable');
-      // setState(() {
-      //   isSwitched = true;
-      // });
     } else {
-      // print('fingerprint disable');
-      // print('last condtion');
       setState(() {
         isSwitched = false;
       });
@@ -129,23 +308,22 @@ class _UserDashboardState extends State<UserDashboard> {
     final isAvailable = await LocalAuthApi.hasBiometrics();
     final isDeviceSupported = await LocalAuthApi.isDeviceSupported();
     if (isSwitched == false) {
-      if(isAvailable && isDeviceSupported){
-          setState(() {
-        isSwitched = true;
-        switchf = '1';
-      });
-      SharedPreferences prefinger = await SharedPreferences.getInstance();
-      await prefinger.setString('email12', email);
-      await prefinger.setString('SHA12', SHA1);
-      await prefinger.setString('sval12', switchf);
-      }
-      else{
+      if (isAvailable && isDeviceSupported) {
         setState(() {
-        isSwitched = false;
-        switchf = '0';
-      });
+          isSwitched = true;
+          switchf = '1';
+        });
+        SharedPreferences prefinger = await SharedPreferences.getInstance();
+        await prefinger.setString('email12', email);
+        await prefinger.setString('SHA12', SHA1);
+        await prefinger.setString('sval12', switchf);
+      } else {
+        setState(() {
+          isSwitched = false;
+          switchf = '0';
+        });
       }
-     
+
       Fluttertoast.showToast(
         msg: "Finger Print Login Enable Successfully",
         //toastLength: Toast.LENGTH_SHORT,
@@ -188,14 +366,11 @@ class _UserDashboardState extends State<UserDashboard> {
   void initState() {
     // TODO: implement initState
     super.initState();
-
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //     SystemChrome.setSystemUIOverlayStyle(overlayStyle);
-    //   });
+    token = widget.token1;
+    email = widget.email1;
+    userid = widget.userid1;
+    SHA1 = widget.SHA11;
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {});
-    // getCred();
-    // getstatus();
-    // _getCurrentPosition();
     initConnectivity();
     _connectivitySubscription =
         _connectivity.onConnectivityChanged.listen(_UpdateConnectionState);
@@ -218,8 +393,11 @@ class _UserDashboardState extends State<UserDashboard> {
   Future<void> _UpdateConnectionState(ConnectivityResult result) async {
     if (result == ConnectivityResult.mobile ||
         result == ConnectivityResult.wifi) {
-      getCred();
-      getstatus();
+      //getCred();
+      //getstatus();
+      getusername();
+      getAllCategory();
+      checkflogin();
       _getCurrentPosition();
       final snackBar = SnackBar(
           content: Row(
@@ -297,25 +475,54 @@ class _UserDashboardState extends State<UserDashboard> {
     var start = format.parse(time3);
     var end = format.parse(systime);
 
-    // print(start);
-    // print(end);
-    //if (start.isAfter(end)) {
-    //end = end.add(Duration(days: 1));
     Duration diff = end.difference(start);
-    final hours1 = diff.inHours;
-    final minutes1 = diff.inMinutes % 60;
-    final seconds1 = diff.inSeconds % 60;
-    //else if (hours > 0 && minutes > 0) {
-    setState(() {
-      hours = hours1;
-      minutes = minutes1;
-      seconds = seconds1;
-      time2 = Time(hours3: hours, minutes3: minutes, seconds3: seconds);
-    });
-    // }
-    print('$hours hours $minutes minutes $seconds seconds');
-    print('$hours1 hours1 $minutes1 minutes1');
-    //}
+    if (diff.isNegative) {
+      diff = start.difference(end);
+      final hours1 = diff.inHours;
+      final minutes1 = diff.inMinutes % 60;
+      final seconds1 = diff.inSeconds % 60;
+      setState(() {
+        hours = hours1;
+        minutes = minutes1;
+        seconds = seconds1;
+        time2 = Time(hours3: hours, minutes3: minutes, seconds3: seconds);
+      });
+      // }
+      print('$hours hours $minutes minutes $seconds seconds');
+      print('$hours1 hours1 $minutes1 minutes1');
+      setState(() {
+        _isnegative = true;
+      });
+      Fluttertoast.showToast(
+        msg:
+            "Your Check-in is 1 or more days earlier.Kindly tap to check-out immediately!",
+        //toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 5,
+        //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+        backgroundColor: Colors.black,
+        textColor: Colors.white,
+        fontSize: 16,
+      );
+    } else {
+      setState(() {
+        _isnegative = false;
+      });
+      final hours1 = diff.inHours;
+      final minutes1 = diff.inMinutes % 60;
+      final seconds1 = diff.inSeconds % 60;
+      //else if (hours > 0 && minutes > 0) {
+      setState(() {
+        hours = hours1;
+        minutes = minutes1;
+        seconds = seconds1;
+        time2 = Time(hours3: hours, minutes3: minutes, seconds3: seconds);
+      });
+      // }
+      print('$hours hours $minutes minutes $seconds seconds');
+      print('$hours1 hours1 $minutes1 minutes1');
+      //}
+    }
   }
 
   void _getFrontCamera() async {
@@ -350,7 +557,7 @@ class _UserDashboardState extends State<UserDashboard> {
                   headers: {
                     "Accept": "application/json",
                     "content-type": "application/json",
-                    'Authorization': 'Bearer $token'
+                    'Authorization': 'Bearer ${token}'
                   },
                   body: jsonEncode({
                     'userID': userid,
@@ -368,6 +575,7 @@ class _UserDashboardState extends State<UserDashboard> {
               time = DateFormat("hh:mm a").format(DateTime.now());
               time3 = DateFormat("HH:mm:ss").format(DateTime.now());
               time1 = '';
+              _ischeckin = true;
             });
 
             var data = jsonDecode(response.body.toString());
@@ -384,19 +592,16 @@ class _UserDashboardState extends State<UserDashboard> {
               textColor: Colors.white,
               fontSize: 16,
             );
-            SharedPreferences pref2 = await SharedPreferences.getInstance();
-            await pref2.setString('status', value);
-            await pref2.setString('CID', clientid.toString());
-            await pref2.setString('time', time.toString());
-            await pref2.setString('time2', time3.toString());
-            _timerstart();
             setState(() {
               _ischeckin = true;
             });
-            //Navigator.pushNamed(context, 'dashboard');
-            //startTimer();
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UserDashboard(token, SHA1, email, userid),
+              ),
+            );
           } else {
-            //print("Soaub ${response.body}");
             Fluttertoast.showToast(
               msg: "Server Error Found/Select a client",
               //toastLength: Toast.LENGTH_SHORT,
@@ -411,12 +616,12 @@ class _UserDashboardState extends State<UserDashboard> {
           }
         } catch (e) {
           print(e.toString());
-          // setState(() {
-          //   _ischeckin=false;
-          // });
-          //Navigator.pushNamed(context, 'dashboard');
-          Navigator.pushNamedAndRemoveUntil(
-              context, 'dashboard', (route) => false);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UserDashboard(token, SHA1, email, userid),
+            ),
+          );
           Fluttertoast.showToast(
             msg:
                 "Internet is not working/Please enable the Location services then TAP Live Location",
@@ -432,115 +637,13 @@ class _UserDashboardState extends State<UserDashboard> {
         }
       } catch (e) {
         print("error messege${e.toString()}");
-        //if (e.toString() == 'Null check operator used on a null value') {
-        //Navigator.pushNamed(context, 'dashboard');
-        Navigator.pushNamedAndRemoveUntil(
-            context, 'dashboard', (route) => false);
-//}
-        // Fluttertoast.showToast(
-        //     msg: e.toString(),
-        //     //toastLength: Toast.LENGTH_SHORT,
-        //     gravity: ToastGravity.BOTTOM,
-        //     timeInSecForIosWeb: 5,
-        //     //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-        //     backgroundColor: Colors.black,
-        //     textColor: Colors.white,
-        //     fontSize: 16,
-        //   );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UserDashboard(token, SHA1, email, userid),
+          ),
+        );
       }
-
-      // //time = DateFormat("hh:mm a").format(DateTime.now());
-      // print("time before:$time");
-
-      // setState(() {
-      //   base64string =
-      //       base64.encode(imagebytes); //convert bytes to base64 string
-      // });
-      // setState(() {
-      //   _ischeckin=false;
-      // });
-      // try {
-      //   Response response = await post(Uri.parse('${globals.apiurl}attendance'),
-      //       headers: {
-      //         "Accept": "application/json",
-      //         "content-type": "application/json",
-      //         'Authorization': 'Bearer $token'
-      //       },
-      //       body: jsonEncode({
-      //         'userID': userid,
-      //         'attendanceTime': time,
-      //         'latitude': _currentPosition!.latitude.toString(),
-      //         'longitude': _currentPosition!.longitude.toString(),
-      //         'attendanceType': "CHECK-IN",
-      //         'imageBytes': base64string.toString(),
-      //         'attendanceAddress': _currentAddress.toString(),
-      //         'userInfo': null,
-      //         'clientID': clientid
-      //       })).timeout(const Duration(seconds: 25));
-      //   if (response.statusCode == 200) {
-      //     setState(() {
-      //       time = DateFormat("hh:mm a").format(DateTime.now());
-      //       time3 = DateFormat("hh:mm:ss a").format(DateTime.now());
-      //       time1 = '';
-      //     });
-
-      //     var data = jsonDecode(response.body.toString());
-      //     // print(data);
-      //     // print('success');
-
-      //     Fluttertoast.showToast(
-      //       msg: "$username Check-in at $time",
-      //       //toastLength: Toast.LENGTH_SHORT,
-      //       gravity: ToastGravity.BOTTOM,
-      //       timeInSecForIosWeb: 3,
-      //       //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-      //       backgroundColor: Colors.black,
-      //       textColor: Colors.white,
-      //       fontSize: 16,
-      //     );
-      //     SharedPreferences pref2 = await SharedPreferences.getInstance();
-      //     await pref2.setString('status', value);
-      //     await pref2.setString('CID', clientid.toString());
-      //     await pref2.setString('time', time.toString());
-      //     await pref2.setString('time2', time3.toString());
-      //     _timerstart();
-      //     setState(() {
-      //       _ischeckin = true;
-      //     });
-      //     //startTimer();
-      //   } else {
-      //     //print("Soaub ${response.body}");
-      //     Fluttertoast.showToast(
-      //       msg: "Server Error Found/Select a client",
-      //       //toastLength: Toast.LENGTH_SHORT,
-      //       gravity: ToastGravity.BOTTOM,
-      //       timeInSecForIosWeb: 5,
-      //       //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-      //       backgroundColor: Colors.black,
-      //       textColor: Colors.white,
-      //       fontSize: 16,
-      //     );
-      //     //print('failed');
-      //   }
-      // } catch (e) {
-      //   print(e.toString());
-      //   // setState(() {
-      //   //   _ischeckin=false;
-      //   // });
-      //   Navigator.pushNamed(context, 'dashboard');
-      //   Fluttertoast.showToast(
-      //     msg:
-      //         "Internet is not working/Please enable the Location services then TAP Live Location",
-      //     //toastLength: Toast.LENGTH_SHORT,
-      //     gravity: ToastGravity.BOTTOM,
-      //     timeInSecForIosWeb: 5,
-      //     //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-      //     backgroundColor: Colors.black,
-      //     textColor: Colors.white,
-      //     fontSize: 16,
-      //   );
-      //   //print(e.toString());
-      // }
     } else if (value == "2") {
       try {
         XFile? pickedFile = (await ImagePicker().pickImage(
@@ -568,7 +671,7 @@ class _UserDashboardState extends State<UserDashboard> {
                   headers: {
                     "Accept": "application/json",
                     "content-type": "application/json",
-                    'Authorization': 'Bearer $token'
+                    'Authorization': 'Bearer ${token}'
                   },
                   body: jsonEncode({
                     'userID': userid,
@@ -585,13 +688,8 @@ class _UserDashboardState extends State<UserDashboard> {
             setState(() {
               time1 = DateFormat("hh:mm a").format(DateTime.now());
             });
-            //print("time after:$time1");
-            // box.write('email',email);
-            // print(box.read('email').toString());
-            // box.remove('email');
             var data = jsonDecode(response.body.toString());
-            // print(data);
-            // print('success');
+
             Fluttertoast.showToast(
               msg: "$username Check-out at $time1",
               //toastLength: Toast.LENGTH_SHORT,
@@ -602,13 +700,12 @@ class _UserDashboardState extends State<UserDashboard> {
               textColor: Colors.white,
               fontSize: 16,
             );
-            SharedPreferences pref2 = await SharedPreferences.getInstance();
-            await pref2.remove('status');
-            await pref2.remove('CID');
-            await pref2.remove('time');
-            await pref2.remove('time2');
-            Navigator.pushNamedAndRemoveUntil(
-                context, 'dashboard', (route) => false);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UserDashboard(token, SHA1, email, userid),
+              ),
+            );
           } else {
             //print("Soaub ${response.body}");
             Fluttertoast.showToast(
@@ -625,9 +722,12 @@ class _UserDashboardState extends State<UserDashboard> {
           }
         } catch (e) {
           print(e.toString());
-          //Navigator.pushNamed(context, 'dashboard');
-          Navigator.pushNamedAndRemoveUntil(
-              context, 'dashboard', (route) => false);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UserDashboard(token, SHA1, email, userid),
+            ),
+          );
           Fluttertoast.showToast(
             msg:
                 "Internet is not working/Please enable the Location services then TAP Live Location",
@@ -642,104 +742,13 @@ class _UserDashboardState extends State<UserDashboard> {
           //print(e.toString());
         }
       } catch (e) {
-        Navigator.pushNamedAndRemoveUntil(
-            context, 'dashboard', (route) => false);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UserDashboard(token, SHA1, email, userid),
+          ),
+        );
       }
-      // XFile? pickedFile = (await ImagePicker().pickImage(
-      //   source: ImageSource.camera,
-      //   maxHeight: 190,
-      //   maxWidth: 190,
-      //   //imageQuality: 200
-      // ));
-      // setState(() {
-      //   //imageFile=File(pickedFile!.path);
-      //   imageFile = File(pickedFile!.path);
-      // });
-      // print(imageFile);
-      // Uint8List imagebytes = await imageFile!.readAsBytes(); //convert to bytes
-
-      // //print("time before:$time1");
-      // setState(() {
-      //   base64string =
-      //       base64.encode(imagebytes); //convert bytes to base64 string
-      // });
-      // try {
-      //   Response response = await post(Uri.parse('${globals.apiurl}attendance'),
-      //       headers: {
-      //         "Accept": "application/json",
-      //         "content-type": "application/json",
-      //         'Authorization': 'Bearer $token'
-      //       },
-      //       body: jsonEncode({
-      //         'userID': userid,
-      //         'attendanceTime': time1,
-      //         'latitude': _currentPosition!.latitude.toString(),
-      //         'longitude': _currentPosition!.longitude.toString(),
-      //         'attendanceType': "CHECK-OUT",
-      //         'imageBytes': base64string.toString(),
-      //         'attendanceAddress': _currentAddress.toString(),
-      //         'userInfo': null,
-      //         'clientID': clientid
-      //       })).timeout(const Duration(seconds: 25));
-      //   if (response.statusCode == 200) {
-      //     setState(() {
-      //       time1 = DateFormat("hh:mm a").format(DateTime.now());
-      //     });
-      //     //print("time after:$time1");
-      //     // box.write('email',email);
-      //     // print(box.read('email').toString());
-      //     // box.remove('email');
-      //     var data = jsonDecode(response.body.toString());
-      //     // print(data);
-      //     // print('success');
-      //     Fluttertoast.showToast(
-      //       msg: "$username Check-out at $time1",
-      //       //toastLength: Toast.LENGTH_SHORT,
-      //       gravity: ToastGravity.BOTTOM,
-      //       timeInSecForIosWeb: 3,
-      //       //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-      //       backgroundColor: Colors.black,
-      //       textColor: Colors.white,
-      //       fontSize: 16,
-      //     );
-      //     SharedPreferences pref2 = await SharedPreferences.getInstance();
-      //     await pref2.remove('status');
-      //     await pref2.remove('CID');
-      //     await pref2.remove('time');
-      //     await pref2.remove('time2');
-      //     Navigator.pushNamedAndRemoveUntil(
-      //         context, 'dashboard', (route) => false);
-      //   } else {
-      //     //print("Soaub ${response.body}");
-      //     Fluttertoast.showToast(
-      //       msg: "Server Error Found",
-      //       //toastLength: Toast.LENGTH_SHORT,
-      //       gravity: ToastGravity.BOTTOM,
-      //       timeInSecForIosWeb: 5,
-      //       //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-      //       backgroundColor: Colors.black,
-      //       textColor: Colors.white,
-      //       fontSize: 16,
-      //     );
-      //     //print('failed');
-      //   }
-      // } catch (e) {
-      //   print(e.toString());
-      //   //Navigator.pushNamed(context, 'dashboard');
-      //   Navigator.pushNamedAndRemoveUntil(context, 'dashboard', (route) => false);
-      //   Fluttertoast.showToast(
-      //     msg:
-      //         "Internet is not working/Please enable the Location services then TAP Live Location",
-      //     //toastLength: Toast.LENGTH_SHORT,
-      //     gravity: ToastGravity.BOTTOM,
-      //     timeInSecForIosWeb: 5,
-      //     //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-      //     backgroundColor: Colors.black,
-      //     textColor: Colors.white,
-      //     fontSize: 16,
-      //   );
-      //   //print(e.toString());
-      // }
     }
   }
 
@@ -751,39 +760,20 @@ class _UserDashboardState extends State<UserDashboard> {
         headers: {
           "Accept": "application/json",
           "content-type": "application/json",
-          'Authorization': 'Bearer $token'
+          'Authorization': 'Bearer ${token}'
         },
       ).timeout(const Duration(seconds: 50));
       if (response.statusCode == 200) {
-        // print("success");
-        // print(response.body.toString());
         var data = jsonDecode(response.body.toString());
-
         for (var element in data) {
           client_Search_categories.add(element['fldName']);
         }
-        // print("success");
-        // print(client_Search_categories);
         setState(() {
           client_categories = data;
         });
-        Fluttertoast.showToast(
-          //msg: response.statusCode.toString() + response.body,
-          msg: "Clients is ready to show!",
-          //toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 5,
-          //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-          backgroundColor: Colors.black,
-          textColor: Colors.white,
-          fontSize: 16,
-        );
       } else {
         try {
           print("token expired");
-          // print(email);
-          // print(SHA1);
-          //getAllCategory();
           Response response = await post(Uri.parse('${globals.apiurl}token'),
               headers: {
                 "Accept": "application/json",
@@ -796,13 +786,14 @@ class _UserDashboardState extends State<UserDashboard> {
 
           if (response.statusCode == 200) {
             var data1 = jsonDecode(response.body.toString());
-            SharedPreferences pref1 = await SharedPreferences.getInstance();
-            await pref1.setString('login', data1['password']);
-
-            Navigator.pushNamedAndRemoveUntil(
-                context, 'dashboard', (route) => false);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    UserDashboard(data1['password'], SHA1, email, userid),
+              ),
+            );
           } else {
-            //print("Soaub ${response.body}");
             Fluttertoast.showToast(
               //msg: response.statusCode.toString() + response.body,
               msg: "Server Error Found/Failed to Show Categories",
@@ -818,31 +809,10 @@ class _UserDashboardState extends State<UserDashboard> {
           }
         } catch (e) {
           print(e.toString());
-          // Fluttertoast.showToast(
-          //   msg: "Internet is not working Kindly Connect it",
-          //   //toastLength: Toast.LENGTH_SHORT,
-          //   gravity: ToastGravity.BOTTOM,
-          //   timeInSecForIosWeb: 5,
-          //   //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-          //   backgroundColor: Colors.black,
-          //   textColor: Colors.white,
-          //   fontSize: 16,
-          // );
-          //print(e.toString());
         }
       }
     } catch (e) {
       print(e.toString());
-      // Fluttertoast.showToast(
-      //   msg: "Internet is not working Kindly Connect it",
-      //   //toastLength: Toast.LENGTH_SHORT,
-      //   gravity: ToastGravity.BOTTOM,
-      //   timeInSecForIosWeb: 5,
-      //   //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-      //   backgroundColor: Colors.black,
-      //   textColor: Colors.white,
-      //   fontSize: 16,
-      // );
     }
   }
 
@@ -857,7 +827,6 @@ class _UserDashboardState extends State<UserDashboard> {
       clientid = "";
       time = "";
       print("newstatus : $newstatus , newcid : $newcid , newtime : $newtime");
-      //check_two_times_is_before();
     } else {
       print("newstatus : $newstatus , newcid : $newcid , newtime : $newtime");
       setState(() {
@@ -890,13 +859,8 @@ class _UserDashboardState extends State<UserDashboard> {
         userid = pref.getString("id")!;
       });
       print(email);
-      //print(email);
-      getAllCategory();
-      checkflogin();
       print('pre token: $token');
       print("id: $userid");
-      // print('SHA1: $SHA1');
-      // print('email: $email');
     } else {
       setState(() {
         token = pref1.getString("login")!;
@@ -1017,19 +981,7 @@ class _UserDashboardState extends State<UserDashboard> {
           );
           //_currentAddress='';
         }
-      } catch (e) {
-        // Fluttertoast.showToast(
-        //   msg:
-        //       "Kindly connect the internet and press location icon to show live location",
-        //   //toastLength: Toast.LENGTH_SHORT,
-        //   gravity: ToastGravity.BOTTOM,
-        //   timeInSecForIosWeb: 15,
-        //   //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-        //   backgroundColor: Colors.black,
-        //   textColor: Colors.white,
-        //   fontSize: 16,
-        // );
-      }
+      } catch (e) {}
     } else {
       Fluttertoast.showToast(
         msg: "Successfully Getting Location Address",
@@ -1053,11 +1005,13 @@ class _UserDashboardState extends State<UserDashboard> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Center(
+          title: Center(
             child: Text(
               'Check-Out Alert!',
               style: TextStyle(
-                color: const Color.fromRGBO(209, 57, 13, 1),
+                color: (value == "1" && _ischeckin)
+                    ? Colors.green
+                    : Colors.blue, // const Color.fromRGBO(209, 57, 13, 1),
               ),
             ),
           ),
@@ -1086,40 +1040,22 @@ class _UserDashboardState extends State<UserDashboard> {
   }
 
   void logout() async {
-    if (_ischeckin) {
-      showAlert(context);
-    } else {
-      SharedPreferences pref = await SharedPreferences.getInstance();
-      await pref.remove('login');
-      await pref.remove('username');
-      await pref.remove('SHA1');
-      await pref.remove('email');
-      await pref.remove('id');
-      SharedPreferences pref1 = await SharedPreferences.getInstance();
-      await pref1.remove('login');
-      SharedPreferences pref2 = await SharedPreferences.getInstance();
-      await pref2.remove('status');
-      await pref2.remove('CID');
-      await pref2.remove('time');
-      await pref2.remove('time2');
-
-      Fluttertoast.showToast(
-        msg: "$username Logout Attendance Portal",
-        //toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 3,
-        //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16,
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => Auth_Screen(),
-        ),
-      );
-    }
+    Fluttertoast.showToast(
+      msg: "$username Logout Attendance Portal",
+      //toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      timeInSecForIosWeb: 3,
+      //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+      backgroundColor: Colors.black,
+      textColor: Colors.white,
+      fontSize: 16,
+    );
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Auth_Screen(),
+      ),
+    );
   }
 
   double height = 0;
@@ -1153,25 +1089,49 @@ class _UserDashboardState extends State<UserDashboard> {
               //   width: double.infinity,
               //   child:
               Container(
-                height: height / 3.7,
-                margin: const EdgeInsets.only(
-                    //top: 20,
-                    //left: 130,
-                    ),
-                decoration: const BoxDecoration(
-                  color: Color.fromRGBO(209, 57, 13, 1),
+                height: height / 3.5,
+                decoration: BoxDecoration(
+                  color:
+                      (value == "1" && _ischeckin) ? Colors.green : Colors.blue,
                   borderRadius: BorderRadius.only(
                     bottomRight: Radius.circular(70),
                   ),
                 ),
-                child: Center(
-                  child: Image.asset(
-                    'assets/images/attendence6.png',
-                    //width: 100,
-                    height: width / 2,
-                    color: Colors.white,
-                    //fit: BoxFit.fill,
-                  ),
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: height / 25,
+                    ),
+                    Row(
+                      //mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: width / 50,
+                        ),
+                        Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                        SizedBox(
+                          width: width / 40,
+                        ),
+                        Text(
+                          username,
+                          style: TextStyle(color: Colors.white, fontSize: 20),
+                        ),
+                      ],
+                    ),
+                    Center(
+                      child: Image.asset(
+                        'assets/images/attendence6.png',
+                        //width: 100,
+                        height: width / 2.5,
+                        color: Colors.white,
+                        //fit: BoxFit.fill,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Container(
@@ -1185,7 +1145,10 @@ class _UserDashboardState extends State<UserDashboard> {
                         date,
                         style: TextStyle(
                           fontSize: width / 21,
-                          color: const Color.fromRGBO(209, 57, 13, 1),
+                          color: (value == '1')
+                              ? Colors.green
+                              : Colors
+                                  .blue, //const Color.fromRGBO(209, 57, 13, 1),
                         ),
                       ),
                     ),
@@ -1201,7 +1164,10 @@ class _UserDashboardState extends State<UserDashboard> {
                       'Finger Print',
                       style: TextStyle(
                         fontSize: width / 21,
-                        color: const Color.fromRGBO(209, 57, 13, 1),
+                        color: (value == '1')
+                            ? Colors.green
+                            : Colors
+                                .blue, //const Color.fromRGBO(209, 57, 13, 1),
                       ),
                     ),
                     Transform.scale(
@@ -1209,8 +1175,12 @@ class _UserDashboardState extends State<UserDashboard> {
                         child: Switch(
                           onChanged: toggleSwitch,
                           value: isSwitched,
-                          activeColor: Color.fromRGBO(209, 57, 13, 1),
-                          activeTrackColor: Color.fromRGBO(250, 213, 213, 1),
+                          activeColor: (value == "1" && _ischeckin)
+                              ? Colors.green
+                              : Colors.blue, //Color.fromRGBO(209, 57, 13, 1),
+                          activeTrackColor: (value == "1" && _ischeckin)
+                              ? Color.fromARGB(255, 198, 240, 200)
+                              : Color.fromRGBO(185, 224, 241, 1),
                           inactiveThumbColor: Colors.white,
                           inactiveTrackColor:
                               Color.fromARGB(255, 190, 186, 186),
@@ -1226,7 +1196,9 @@ class _UserDashboardState extends State<UserDashboard> {
                     style:
                         // GoogleFonts.openSans(color: const Color.fromRGBO(232, 141, 20, 1),fontSize: 25,),
                         TextStyle(
-                      color: const Color.fromRGBO(209, 57, 13, 1),
+                      color: (value == "1" && _ischeckin)
+                          ? Colors.green
+                          : Colors.blue, //const Color.fromRGBO(209, 57, 13, 1),
                       //color: const Color.fromRGBO(232, 141, 20, 1),
                       fontSize: width / 16,
                       fontWeight: FontWeight.w900,
@@ -1236,11 +1208,11 @@ class _UserDashboardState extends State<UserDashboard> {
                 ),
               ),
 
-              const SizedBox(
-                height: 3,
+              SizedBox(
+                height: height / 75,
               ),
               Container(
-                margin: const EdgeInsets.only(left: 100),
+                margin: EdgeInsets.only(left: width / 3.5),
                 width: double.infinity,
                 child: Row(
                   children: [
@@ -1261,20 +1233,23 @@ class _UserDashboardState extends State<UserDashboard> {
                         "Live Location ",
                         style: TextStyle(
                           fontSize: width / 21,
-                          color: Colors.blueAccent,
+                          color: (value == "1" && _ischeckin)
+                              ? Colors.green
+                              : Colors.blueAccent,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(
-                height: 10,
+              SizedBox(
+                height: height / 75,
               ),
               Container(
-                margin: const EdgeInsets.only(
-                  left: 30,
-                  right: 30,
+                margin: EdgeInsets.only(
+                  left: width / 15,
+                  right: width / 15,
+                  top: height / 60,
                 ),
                 child: Text(
                   _currentAddress ??
@@ -1287,496 +1262,355 @@ class _UserDashboardState extends State<UserDashboard> {
                   ),
                 ),
               ),
-              (_isclient && value == "1")
+              (_ischeckin)
                   ? Container(
-                      margin: const EdgeInsets.only(
-                        left: 30,
-                        right: 30,
-                        top: 10,
-                      ),
-
-                      // child: Form(
-                      //   key: _formKey1,
-                      //   autovalidateMode: AutovalidateMode.onUserInteraction,
-                      child: DropdownButtonFormField(
-                        isExpanded: true,
-
-                        //underline: const SizedBox(),//for dropdown button
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(10.0),
-                            ),
-                            // borderSide: BorderSide(
-                            //   color: Color.fromRGBO(105, 240, 174, 1),
-                            //   width: 1.0,
-                            // ),
-                          ),
-                          counterText: "",
-                          prefixIcon: Icon(
-                            Icons.person_add_alt_outlined,
-                          ),
-                        ),
-                        //const InputDecoration.collapsed(hintText: ''),
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 15,
-                        ),
-                        alignment: AlignmentDirectional.center,
-                        dropdownColor: Colors.white,
-
-                        value: (_ischeckin && _isclient) ? clientid : null,
-                        validator: (value) =>
-                            value == null ? 'Please select client' : null,
-                        icon: const Icon(
-                          Icons.arrow_drop_down_outlined,
-                          //Icons.keyboard_arrow_down_sharp,
-                          //color: Colors.grey.shade600,
-                        ),
-                        hint: const Text(
-                          'Select a Client',
-                          style: TextStyle(
-                            color: Colors.black,
-                          ),
-                        ),
-                        items: client_categories.map((item) {
-                          return DropdownMenuItem(
-                            value: item['fldID'].toString(),
-                            child: Text(item['fldName'].toString()),
-                          );
-                        }).toList(),
-
-                        onChanged: (_ischeckin && _isclient)
-                            ? null
-                            : (area) {
-                                setState(() {
-                                  _isclient = true;
-                                  clientid = area.toString();
-                                });
-                                print(clientid);
-                              },
-                      ),
-                      //dropdownfieldform
-                      //),
-                      //),
-                    )
-                  : Container(
-                      margin: const EdgeInsets.only(
-                        left: 30,
-                        right: 30,
-                        top: 10,
-                      ),
-                      child: DropdownSearch<String>(
-                        popupProps: const PopupProps.dialog(
-                          showSelectedItems: true,
-                          showSearchBox: true,
-                          dialogProps: DialogProps(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(10.0),
-                                topRight: Radius.circular(10.0),
-                              ),
-                            ),
-                          ),
-                        ),
-                        items: client_Search_categories,
-                        //items: client_categories,
-                        dropdownDecoratorProps: const DropDownDecoratorProps(
-                          dropdownSearchDecoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(10.0),
-                              ),
-                            ),
-                            counterText: "",
-                            prefixIcon: Icon(
-                              Icons.person_add_alt_outlined,
-                            ),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value.toString() == 'Select a Client') {
-                            return 'Please Select a Client';
-                          }
-                          return null;
-                        },
-                        onChanged: (selectclient) {
-                          var fldID = client_Search_categories
-                                  .indexOf(selectclient.toString()) +
-                              1;
-                          print('index of $selectclient :  $fldID');
-                          setState(() {
-                            //placeValue = newValue!;
-                            _isclient = true;
-                            clientid = fldID.toString();
-                            //selecteditem=selectclient;
-                          });
-                          //print(selecteditem);
-                          print(clientid);
-                          print(selectclient);
-                        },
-                        selectedItem: "Select a Client",
-                      ),
-                    ),
-              const SizedBox(
-                height: 5,
-              ),
-              // (_isclient)
-              //     ? const SizedBox(
-              //         height: 10,
-              //       )
-              //     : Container(),
-              Container(
-                height:
-                    (_isclient && !_ischeckin || _ischeckin) ? height / 3.3 : 0,
-                margin: const EdgeInsets.only(
-                  left: 30,
-                  right: 30,
-                  top: 10,
-                ),
-                //color: (_isclient && value == "1")?const Color.fromRGBO(209, 57, 13, 1):Colors.green,
-                decoration: BoxDecoration(
-                    color: (_isclient && value == "1")
-                        ? const Color.fromRGBO(255, 230, 230, 0.7)
-                        : const Color.fromRGBO(230, 255, 230, 1),
-                    borderRadius: const BorderRadius.all(
-                      Radius.circular(20),
-                    ),
-                    border: Border.all(
-                      color: Colors.black26,
-                    )),
-                // child: Center(
-                //   child: Text(""),
-                // ),
-                child: Column(
-                  children: [
-                    ((!_ischeckin && _isclient) || (_isclient && value == "1"))
-                        ? const SizedBox(
-                            height: 10,
-                          )
-                        : const SizedBox(),
-                    ((!_ischeckin && _isclient) || (_isclient && value == "1"))
-                        ? Container(
-                            margin:
-                                EdgeInsets.only(left: !_ischeckin ? 100 : 95),
-                            child: Row(
-                              children: [
-                                !_ischeckin
-                                    ? CustomRadioButton("CHECK-IN", "1")
-                                    : CustomRadioButton("CHECK-OUT", "2"),
-                                const SizedBox(
-                                  width: 15,
-                                ),
-                              ],
-                            ),
-                          )
-                        : Container(),
-                    (_isclient)
-                        ? const SizedBox(
-                            height: 10,
-                          )
-                        : Container(),
-                    (_isclient && value == "1")
-                        ? Container(
-                            margin: EdgeInsets.only(
-                                left: (value == "1") ? 35 : 45, right: 25),
-                            // color: (value == "1")
-                            //     ? Colors.green
-                            //     // : (value == 2)
-                            //     //     ? const Color.fromRGBO(194, 35, 3, 1)
-                            //     : Colors.white,
-                            decoration: BoxDecoration(
-                              color: (value == "1")
-                                  ? Colors.green
-                                  // : (value == 2)
-                                  //     ? const Color.fromRGBO(194, 35, 3, 1)
-                                  : Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: Colors.black26,
-                              ),
-                            ),
-                            child: SizedBox(
-                              height: 35,
-                              width: (value == "1") ? 230 : 250,
-                              child: Row(
-                                children: [
-                                  const SizedBox(
-                                    width: 10,
+                      child: Column(
+                        children: [
+                          (!_isattendenceloading)
+                              ? Container(
+                                  margin: EdgeInsets.only(
+                                    left: width / 15,
+                                    right: width / 15,
+                                    top: height / 75,
                                   ),
-                                  (value == "1")
-                                      ? const Icon(
-                                          Icons.timer,
-                                          color: Colors.white,
+
+                                  // child: Form(
+                                  //   key: _formKey1,
+                                  //   autovalidateMode: AutovalidateMode.onUserInteraction,
+                                  child: DropdownButtonFormField(
+                                    isExpanded: true,
+
+                                    //underline: const SizedBox(),//for dropdown button
+                                    decoration: const InputDecoration(
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.all(
+                                          Radius.circular(10.0),
+                                        ),
+                                        // borderSide: BorderSide(
+                                        //   color: Color.fromRGBO(105, 240, 174, 1),
+                                        //   width: 1.0,
+                                        // ),
+                                      ),
+                                      counterText: "",
+                                      prefixIcon: Icon(
+                                        Icons.person_add_alt_outlined,
+                                      ),
+                                    ),
+                                    //const InputDecoration.collapsed(hintText: ''),
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 15,
+                                    ),
+                                    alignment: AlignmentDirectional.center,
+                                    dropdownColor: Colors.white,
+
+                                    value: (_ischeckin) ? clientid : null,
+                                    validator: (value) => value == null
+                                        ? 'Please select client'
+                                        : null,
+                                    icon: const Icon(
+                                      Icons.arrow_drop_down_outlined,
+                                      //Icons.keyboard_arrow_down_sharp,
+                                      //color: Colors.grey.shade600,
+                                    ),
+                                    hint: const Text(
+                                      'Select a Client',
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    items: client_categories.map((item) {
+                                      return DropdownMenuItem(
+                                        value: item['fldID'].toString(),
+                                        child: Text(item['fldName'].toString()),
+                                      );
+                                    }).toList(),
+
+                                    onChanged: (_ischeckin || _isusercheckin)
+                                        ? null
+                                        : (area) {
+                                            setState(() {
+                                              _isclient = true;
+                                              clientid = area.toString();
+                                            });
+                                            print(clientid);
+                                          },
+                                  ),
+                                  //dropdownfieldform
+                                  //),
+                                  //),
+                                )
+                              : SizedBox(),
+                          SizedBox(
+                            height: height / 75,
+                          ),
+                          Column(
+                            children: [
+                              ((!_ischeckin) || (value == "1"))
+                                  ? SizedBox(
+                                      height: height / 75,
+                                    )
+                                  : const SizedBox(),
+                              (value == "1" && _ischeckin)
+                                  ? Container(
+                                      margin:
+                                          //EdgeInsets.only(left: !_ischeckin ? 100 : 95),
+                                          EdgeInsets.only(left: width / 50),
+                                      child: CustomRadioButton(
+                                          "TAP TO CHECK-OUT", "2"),
+                                    )
+                                  : Container(),
+                              (value == "1" && _ischeckin)
+                                  ? SizedBox(
+                                      height: height / 60,
+                                    )
+                                  : const SizedBox(
+                                      height: 0,
+                                    ),
+                              (value == "1" && _ischeckin)
+                                  ? Container(
+                                      margin:
+                                          EdgeInsets.only(left: width / 4.5),
+                                      child: Row(
+                                          //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            buildTimeCard(
+                                                time: time2.hours3,
+                                                header: 'HRS'),
+                                            SizedBox(
+                                              width: width / 8,
+                                            ),
+                                            buildTimeCard(
+                                                time: time2.minutes3,
+                                                header: 'MIN'),
+                                            SizedBox(
+                                              width: width / 8,
+                                            ),
+                                            buildTimeCard(
+                                                time: time2.seconds3,
+                                                header: 'SEC'),
+                                          ]),
+                                    )
+                                  : const SizedBox(),
+                              (value == "1" && _ischeckin)
+                                  ? SizedBox(
+                                      height: height / 75,
+                                    )
+                                  : const SizedBox(
+                                      height: 0,
+                                    ),
+                              (value == "1" && _ischeckin)
+                                  ? Container(
+                                      margin: EdgeInsets.only(
+                                          left: (value == "1")
+                                              ? width / 10
+                                              : width / 10,
+                                          right: width / 10),
+                                      decoration: BoxDecoration(
+                                        color: (value == "1")
+                                            ? Colors.green
+                                            : Colors.white,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: Colors.black26,
+                                        ),
+                                      ),
+                                      child: SizedBox(
+                                        height: height / 20,
+                                        width: (value == "1")
+                                            ? width / 1.4
+                                            : width / 1,
+                                        child: Row(
+                                          children: [
+                                            SizedBox(
+                                              //width: width / 25,
+                                              width: width / 30,
+                                            ),
+                                            (value == "1")
+                                                ? const Icon(
+                                                    Icons.timer,
+                                                    color: Colors.white,
+                                                  )
+                                                : Container(),
+                                            SizedBox(
+                                              //width: width / 18,
+                                              width: width / 30,
+                                            ),
+                                            (value == "1")
+                                                ? Text(
+                                                    //'CHECK-IN TIME  $time',
+                                                    'CHECK-IN TIME  $time12',
+                                                    style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 16),
+                                                  )
+                                                : const Text(""),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : Container(),
+                              (_isnegative)
+                                  ? SizedBox(
+                                      height: height / 75,
+                                    )
+                                  : const SizedBox(
+                                      height: 0,
+                                    ),
+                              (_isnegative)
+                                  ? Container(
+                                      margin: EdgeInsets.only(
+                                          left: (_isnegative)
+                                              ? width / 15
+                                              : width / 10,
+                                          right: width / 10),
+                                      decoration: BoxDecoration(
+                                        color: (_isnegative)
+                                            ? Colors.green
+                                            : Colors.white,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: Colors.black26,
+                                        ),
+                                      ),
+                                      child: SizedBox(
+                                        height: height / 20,
+                                        width: (value == "1")
+                                            ? width / 0.1
+                                            : width / 1,
+                                        child: Row(
+                                          children: [
+                                            SizedBox(
+                                              //width: width / 25,
+                                              width: width / 30,
+                                            ),
+                                            (_isnegative)
+                                                ? const Icon(
+                                                    Icons.date_range_sharp,
+                                                    color: Colors.white,
+                                                  )
+                                                : Container(),
+                                            SizedBox(
+                                              //width: width / 18,
+                                              width: width / 30,
+                                            ),
+                                            (_isnegative)
+                                                ? Text(
+                                                    //'CHECK-IN TIME  $time',
+                                                    'CHECK-IN DATE  $attendencedate',
+                                                    style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 14.8),
+                                                  )
+                                                : const Text(""),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : Container(),
+                            ],
+                          )
+                          //),
+                        ],
+                      ),
+                    )
+                  : Column(
+                      children: [
+                        SizedBox(
+                          height: height / 75,
+                        ),
+                        (!_isattendenceloading)
+                            ? Center(
+                                child: CircularProgressIndicator(
+                                  color: Colors.blue,
+                                ),
+                              )
+                            : Column(
+                                children: [
+                                  Container(
+                                    margin: EdgeInsets.only(
+                                      left: width / 15,
+                                      right: width / 15,
+                                      top: height / 75,
+                                    ),
+                                    child: DropdownSearch<String>(
+                                      enabled:
+                                          !_isattendenceloading ? false : true,
+                                      popupProps: const PopupProps.dialog(
+                                        showSelectedItems: true,
+                                        showSearchBox: true,
+                                        dialogProps: DialogProps(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.only(
+                                              topLeft: Radius.circular(10.0),
+                                              topRight: Radius.circular(10.0),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      items: client_Search_categories,
+                                      //items: client_categories,
+                                      dropdownDecoratorProps:
+                                          const DropDownDecoratorProps(
+                                        dropdownSearchDecoration:
+                                            InputDecoration(
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                              Radius.circular(10.0),
+                                            ),
+                                          ),
+                                          counterText: "",
+                                          prefixIcon: Icon(
+                                            Icons.person_add_alt_outlined,
+                                          ),
+                                        ),
+                                      ),
+
+                                      validator: (value) {
+                                        if (value.toString() ==
+                                            'Select a Client') {
+                                          return 'Please Select a Client';
+                                        }
+                                        return null;
+                                      },
+                                      onChanged: (selectclient) {
+                                        var fldID =
+                                            client_Search_categories.indexOf(
+                                                    selectclient.toString()) +
+                                                1;
+                                        print(
+                                            'index of $selectclient :  $fldID');
+                                        setState(() {
+                                          //placeValue = newValue!;
+                                          _isclient = true;
+                                          clientid = fldID.toString();
+                                          //selecteditem=selectclient;
+                                        });
+                                        //print(selecteditem);
+                                        print(clientid);
+                                        print(selectclient);
+                                      },
+                                      selectedItem: "Select a Client",
+                                    ),
+                                  ),
+                                  (_isclient)
+                                      ? SizedBox(
+                                          height: height / 75,
+                                        )
+                                      : const SizedBox(),
+                                  (_isclient)
+                                      ? Container(
+                                          margin:
+                                              //EdgeInsets.only(left: !_ischeckin ? 100 : 95),
+                                              EdgeInsets.only(left: width / 50),
+                                          child: CustomRadioButton(
+                                              "TAP TO CHECK-IN", "1"),
                                         )
                                       : Container(),
-                                  const SizedBox(
-                                    width: 10,
-                                  ),
-                                  (value == "1")
-                                      ? Text(
-                                          'CHECK-IN TIME  $time',
-                                          style: const TextStyle(
-                                              color: Colors.white),
-                                        )
-                                      : const Text(""),
                                 ],
                               ),
-                            ),
-                          )
-                        : Container(),
-                    (_isclient && value == "1" && _ischeckin)
-                        ? const SizedBox(
-                            height: 10,
-                          )
-                        : const SizedBox(
-                            height: 0,
-                          ),
-                    (_isclient && value == "1" && _ischeckin)
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                                buildTimeCard(
-                                    time: time2.hours3, header: 'HOURS'),
-                                const SizedBox(
-                                  width: 8,
-                                ),
-                                buildTimeCard(
-                                    time: time2.minutes3, header: 'MINUTES'),
-                                const SizedBox(
-                                  width: 8,
-                                ),
-                                buildTimeCard(
-                                    time: time2.seconds3, header: 'SECONDS'),
-                              ])
-                        : const SizedBox(),
-                    // (_isclient && value == "1" && _ischeckin)
-                    //     ? Center(
-                    //         child: Row(
-                    //           mainAxisAlignment: MainAxisAlignment.center,
-                    //           children: [
-                    //             (time2.hours3 < 10)
-                    //                 ? Text(
-                    //                     '0${time2.hours3} HRS : ',
-                    //                     style: const TextStyle(
-                    //                         fontSize: 18,
-                    //                         fontWeight: FontWeight.bold,
-                    //                         color: Colors.red),
-                    //                   )
-                    //                 : Text(
-                    //                     '${time2.hours3} HRS : ',
-                    //                     style: const TextStyle(
-                    //                         fontSize: 18,
-                    //                         fontWeight: FontWeight.bold,
-                    //                         color: Colors.red),
-                    //                   ),
-                    //             (time2.minutes3 < 10)
-                    //                 ? Text(
-                    //                     '0${time2.minutes3} MINS : ',
-                    //                     style: const TextStyle(
-                    //                         fontSize: 18,
-                    //                         fontWeight: FontWeight.bold,
-                    //                         color: Colors.red),
-                    //                   )
-                    //                 : Text(
-                    //                     '${time2.minutes3} MINS : ',
-                    //                     style: const TextStyle(
-                    //                         fontSize: 18,
-                    //                         fontWeight: FontWeight.bold,
-                    //                         color: Colors.red),
-                    //                   ),
-                    //             (time2.seconds3 < 10)
-                    //                 ? Text(
-                    //                     '0${time2.seconds3} SEC',
-                    //                     style: const TextStyle(
-                    //                         fontSize: 18,
-                    //                         fontWeight: FontWeight.bold,
-                    //                         color: Colors.red),
-                    //                   )
-                    //                 : Text(
-                    //                     '${time2.seconds3} SEC',
-                    //                     style: const TextStyle(
-                    //                         fontSize: 18,
-                    //                         fontWeight: FontWeight.bold,
-                    //                         color: Colors.red),
-                    //                   ),
-                    //           ],
-                    //         ),
-                    //       )
-                    //     : const SizedBox(),
-                  ],
-                ),
-              ),
-              // ((!_ischeckin && _isclient) || (_isclient && value == "1"))
-              //     ? Container(
-              //         margin: EdgeInsets.only(left: !_ischeckin ? 130 : 120),
-              //         child: Row(
-              //           children: [
-              //             !_ischeckin
-              //                 ? CustomRadioButton("CHECK-IN", "1")
-              //                 : CustomRadioButton("CHECK-OUT", "2"),
-              //             const SizedBox(
-              //               width: 15,
-              //             ),
-              //           ],
-              //         ),
-              //       )
-              //     : Container(),
-              // (_isclient)
-              //     ? const SizedBox(
-              //         height: 10,
-              //       )
-              //     : Container(),
-              // (_isclient &&  value == "1")
-              //     ? Container(
-              //         margin: EdgeInsets.only(
-              //             left: (value == "1") ? 60 : 50, right: 25),
-              //         color: (value == "1")
-              //             ? Colors.green
-              //             // : (value == 2)
-              //             //     ? const Color.fromRGBO(194, 35, 3, 1)
-              //             : Colors.white,
-              //         child: SizedBox(
-              //           height: 35,
-              //           width: (value == "1") ? 230 : 250,
-              //           child: Row(
-              //             children: [
-              //               const SizedBox(
-              //                 width: 10,
-              //               ),
-              //               (value == "1")
-              //                   ? const Icon(
-              //                       Icons.timer,
-              //                       color: Colors.white,
-              //                     )
-              //                   : Container(),
-              //               const SizedBox(
-              //                 width: 10,
-              //               ),
-              //               (value == "1")
-              //                   ? Text(
-              //                       'CHECK-IN TIME  $time',
-              //                       style: const TextStyle(color: Colors.white),
-              //                     )
-              //                   : const Text(""),
-              //             ],
-              //           ),
-              //         ),
-              //       )
-              //     : Container(),
-              // (_isclient &&  value == "1")
-              //     ? const SizedBox(
-              //         height: 17,
-              //       )
-              //     : const SizedBox(
-              //         height: 0,
-              //       ),
-
-              // (_isclient && value == "1")
-              //     ? Center(
-              //         child: Text(
-              //           '${time2.hours3} HRS : '
-              //           '${time2.minutes3} MINS : '
-              //           '${time2.seconds3} SEC',
-              //           style: const TextStyle(
-              //               fontSize: 18, fontWeight: FontWeight.bold),
-              //         ),
-              //       )
-              //     : const SizedBox(),
-              // _ischeckin && (hours == 0 && minutes == 0)
-              //     ?
-              // Container(
-              //     margin: const EdgeInsets.only(left: 125),
-              //     child: Text(
-              //       '$hours1:$minutes1:$seconds1',
-              //       style: const TextStyle(
-              //           fontWeight: FontWeight.bold,
-              //           color: Colors.black,
-              //           fontSize: 30),
-              //     ),
-              //   ),
-              //: Container(),
-              // (_isclient && value == "1")
-              //     ? const SizedBox(
-              //         height: 17,
-              //       )
-              //     : Container(),
-              // (_isclient && value == "1")
-              //     ? Container(
-              //         margin: EdgeInsets.only(
-              //             left: (hours == 0)
-              //                 ? 40
-              //                 : (minutes == 0)
-              //                     ? 130
-              //                     : 85,
-              //             right: 25),
-              //         //color: Colors.red,
-              //         // child:
-              //         // SizedBox(
-              //         //     height: 35,
-              //         //     width: 75,
-              //         child:
-              //             // (hours == 1)
-              //             //     ?
-              //             Row(
-              //           children: [
-              //             //const SizedBox(width: 7,),
-              //             (hours == 0)
-              //                 ? Container(
-              //                     margin: const EdgeInsets.only(left: 80),
-              //                   )
-              //                 : Container(
-              //                     color: Colors.red,
-              //                     child: SizedBox(
-              //                       height: 20,
-              //                       width: 80,
-              //                       child: (hours == 1)
-              //                           ? Text("$hours HOUR",
-              //                               textAlign: TextAlign.center,
-              //                               style: const TextStyle(
-              //                                   color: Colors.white))
-              //                           : Text("$hours HOURS",
-              //                               textAlign: TextAlign.center,
-              //                               style: const TextStyle(
-              //                                   color: Colors.white)),
-              //                     ),
-              //                   ),
-              //             const SizedBox(
-              //               width: 10,
-              //             ),
-              //             (minutes == 0)
-              //                 ? Container(
-              //                     margin: const EdgeInsets.only(left: 115),
-              //                   )
-              //                 : Container(
-              //                     color: Colors.red,
-              //                     child: SizedBox(
-              //                       height: 20,
-              //                       width: 95,
-              //                       child: (minutes == 1)
-              //                           ? Text("$minutes MINUTE",
-              //                               textAlign: TextAlign.center,
-              //                               style: const TextStyle(
-              //                                   color: Colors.white))
-              //                           : Text("$minutes MINUTES",
-              //                               textAlign: TextAlign.center,
-              //                               style: const TextStyle(
-              //                                   color: Colors.white)),
-              //                     ),
-              //                   ),
-              //           ],
-              //         ),
-              //       )
-              //     : Container(),
-              // ((_isclient && value == "1"))
-              //     ? const SizedBox(
-              //         height: 3,
-              //       )
-              //     : Container(),
-              // const SizedBox(
-              //   height: 10,
-              // ),
-
+                      ],
+                    ),
               Container(
                 height: height / 10,
                 margin: EdgeInsets.only(
@@ -1784,8 +1618,10 @@ class _UserDashboardState extends State<UserDashboard> {
                   right: 30,
                   top: height / 55,
                 ),
-                decoration: const BoxDecoration(
-                  color: Color.fromRGBO(209, 57, 13, 1),
+                decoration: BoxDecoration(
+                  color: (value == "1" && _ischeckin)
+                      ? Colors.green
+                      : Colors.blue, //Color.fromRGBO(209, 57, 13, 1),
                   borderRadius: BorderRadius.all(
                     Radius.circular(20),
                   ),
@@ -1797,14 +1633,23 @@ class _UserDashboardState extends State<UserDashboard> {
                       heroTag: "btn1",
                       backgroundColor: Colors.white,
                       onPressed: () {
-                        Navigator.pushNamedAndRemoveUntil(
-                            context, 'dashboard', (route) => false);
+                        // Navigator.pushNamedAndRemoveUntil(
+                        //     context, 'dashboard', (route) => false);
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                UserDashboard(token, SHA1, email, userid),
+                          ),
+                        );
                         //Navigator.pushNamed(context, 'dashboard');
                       },
-                      child: const Icon(
+                      child: Icon(
                         Icons.refresh_outlined,
                         size: 25,
-                        color: Color.fromRGBO(209, 57, 13, 1),
+                        color: (value == "1" && _ischeckin)
+                            ? Colors.green
+                            : Colors.blue, //Color.fromRGBO(209, 57, 13, 1),
                       ),
                     ),
                     FloatingActionButton(
@@ -1814,15 +1659,17 @@ class _UserDashboardState extends State<UserDashboard> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                ViewAttendence(token, userid, SHA1, email),
+                            builder: (context) => ViewAttendence(
+                                token, userid, SHA1, email, username),
                           ),
                         );
                       },
-                      child: const Icon(
+                      child: Icon(
                         Icons.remove_red_eye_sharp,
                         size: 25,
-                        color: Color.fromRGBO(209, 57, 13, 1),
+                        color: (value == "1" && _ischeckin)
+                            ? Colors.green
+                            : Colors.blue, //Color.fromRGBO(209, 57, 13, 1),
                       ),
                     ),
                     FloatingActionButton(
@@ -1831,10 +1678,12 @@ class _UserDashboardState extends State<UserDashboard> {
                       onPressed: () async {
                         logout();
                       },
-                      child: const Icon(
+                      child: Icon(
                         Icons.logout_outlined,
                         size: 25,
-                        color: Color.fromRGBO(209, 57, 13, 1),
+                        color: (value == "1" && _ischeckin)
+                            ? Colors.green
+                            : Colors.blue, //Color.fromRGBO(209, 57, 13, 1),
                       ),
                     ),
                   ],
@@ -1852,34 +1701,72 @@ class _UserDashboardState extends State<UserDashboard> {
 
   var value = "0";
   Widget CustomRadioButton(String text, String index) {
-    return OutlinedButton(
-      onPressed: () {
-        setState(() {
-          value = index;
-        });
-        markattendence();
-      },
-      style: OutlinedButton.styleFrom(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          //side: const BorderSide(color: Colors.black),
+    return
+        // OutlinedButton(
+        //   onPressed: () {
+        //     setState(() {
+        //       value = index;
+        //     });
+        //     markattendence();
+        //   },
+        //   style: OutlinedButton.styleFrom(
+        //       shape:
+        //           RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        //       //side: const BorderSide(color: Colors.black),
 
-          backgroundColor: //const Color.fromRGBO(238, 156, 52, 1)
-              (value == index || !_ischeckin)
-                  ? Colors.green
-                  :
-                  //(value == index && _ischeckin)
-                  //?
-                  // const Color.fromRGBO(194, 35, 3, 1)
-                  Colors.red
-          //: Colors.white,
+        //       backgroundColor: //const Color.fromRGBO(238, 156, 52, 1)
+        //           (value == index || !_ischeckin)
+        //               ? Colors.green
+        //               :
+        //               //(value == index && _ischeckin)
+        //               //?
+        //               // const Color.fromRGBO(194, 35, 3, 1)
+        //               Colors.red
+        //       //: Colors.white,
+        //       ),
+        //   child: Text(
+        //     text,
+        //     style: const TextStyle(color: Colors.white
+        //         //(value == index) ? Colors.white : Colors.black,
+        //         ),
+        //   ),
+        // );
+        Column(
+      children: [
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 16,
+            color: (value == '1') ? Colors.red : Colors.green,
           ),
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.white
-            //(value == index) ? Colors.white : Colors.black,
-            ),
-      ),
+        ),
+        SizedBox(
+          height: height / 75,
+        ),
+        FloatingActionButton.large(
+          onPressed: () {
+            setState(() {
+              value = index;
+            });
+            markattendence();
+          },
+          backgroundColor:
+              (value == index || !_ischeckin) ? Colors.green : Colors.red,
+          foregroundColor: Colors.white,
+          highlightElevation: 0,
+          // shape: RoundedRectangleBorder(
+          //   borderRadius: BorderRadius.circular(50),
+          // ),
+
+          child: (value == index || !_ischeckin)
+              ? Icon(Icons.check)
+              : Icon(Icons.done_all),
+          //         Text(
+          //       text,
+          //       style: TextStyle(color: Colors.white, fontSize: 25),
+          // ),
+        ),
+      ],
     );
   }
 }

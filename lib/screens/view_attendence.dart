@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart';
 import 'dart:convert';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:intl/intl.dart';
 import 'globals.dart' as globals;
 //import 'package:google_fonts/google_fonts.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -16,7 +17,9 @@ class ViewAttendence extends StatefulWidget {
   String userid = "";
   String SHA1 = "";
   String email = "";
-  ViewAttendence(this.token, this.userid, this.SHA1, this.email, {super.key});
+  String username = "";
+  ViewAttendence(this.token, this.userid, this.SHA1, this.email, this.username,
+      {super.key});
 
   @override
   State<ViewAttendence> createState() => _ViewAttendenceState();
@@ -29,6 +32,7 @@ class _ViewAttendenceState extends State<ViewAttendence> {
   String newuserid = "";
   String newSHA1 = "";
   String newemail = "";
+  String newusername = "";
   int totalcheckin = 0;
   int totalcheckout = 0;
   late StreamSubscription subscription;
@@ -43,6 +47,8 @@ class _ViewAttendenceState extends State<ViewAttendence> {
     newuserid = widget.userid;
     newSHA1 = widget.SHA1;
     newemail = widget.email;
+    newusername = widget.username;
+    print(newusername);
     print("token: $newtoken   userid: $newuserid");
     //_getAttendenceData();
     initConnectivity();
@@ -124,7 +130,8 @@ class _ViewAttendenceState extends State<ViewAttendence> {
 
   // The list that contains information about attendence
   List _loadedattendence = [];
-
+  List _lastattendence = [];
+  var _isempty = false;
   // The function that fetches data from the API
   Future<void> _getAttendenceData() async {
     try {
@@ -144,19 +151,40 @@ class _ViewAttendenceState extends State<ViewAttendence> {
         setState(() {
           _loadedattendence = data;
         });
+        //print(_loadedattendence[_loadedattendence.length-1]);
         totalstatus();
         //print(_loadedattendence);
-        Fluttertoast.showToast(
-          //msg: response.statusCode.toString() + response.body,
-          msg: "Attendence Details is ready to show!",
-          //toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 5,
-          //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-          backgroundColor: Colors.black,
-          textColor: Colors.white,
-          fontSize: 16,
-        );
+        if (_loadedattendence.isNotEmpty) {
+          setState(() {
+            _isempty = false;
+          });
+          Fluttertoast.showToast(
+            //msg: response.statusCode.toString() + response.body,
+            msg: "Attendence Details is ready to show!",
+            //toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 5,
+            //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+            backgroundColor: Colors.black,
+            textColor: Colors.white,
+            fontSize: 16,
+          );
+        } else {
+          setState(() {
+            _isempty = true;
+          });
+          Fluttertoast.showToast(
+            //msg: response.statusCode.toString() + response.body,
+            msg: "No data found",
+            //toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 5,
+            //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+            backgroundColor: Colors.black,
+            textColor: Colors.white,
+            fontSize: 16,
+          );
+        }
       } else {
         try {
           print("token expired");
@@ -175,8 +203,8 @@ class _ViewAttendenceState extends State<ViewAttendence> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => ViewAttendence(
-                    data1['password'], newuserid, newSHA1, newemail),
+                builder: (context) => ViewAttendence(data1['password'],
+                    newuserid, newSHA1, newemail, newusername),
               ),
             );
           } else {
@@ -243,22 +271,49 @@ class _ViewAttendenceState extends State<ViewAttendence> {
               //   height: 30,
               // ),
               Container(
-                height: height / 4,
-                width: width,
+                height: height / 3.5,
+                //width: width,
                 margin: const EdgeInsets.only(
                     //top: 20,
                     //left: 130,
                     ),
                 decoration: const BoxDecoration(
-                  color: Color.fromRGBO(209, 57, 13, 1),
+                  color: Colors.blue, //Color.fromRGBO(209, 57, 13, 1),
                   borderRadius: BorderRadius.only(
                     bottomRight: Radius.circular(70),
                   ),
                 ),
-                child: Icon(
-                  Icons.view_list_sharp,
-                  color: Colors.white,
-                  size: width / 3,
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: height / 25,
+                    ),
+                    Row(
+                      //mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: width / 50,
+                        ),
+                        Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                        SizedBox(
+                          width: width / 40,
+                        ),
+                        Text(
+                          newusername,
+                          style: TextStyle(color: Colors.white, fontSize: 20),
+                        ),
+                      ],
+                    ),
+                    Icon(
+                      Icons.view_list_sharp,
+                      color: Colors.white,
+                      size: width / 3,
+                    ),
+                  ],
                 ),
               ),
               Container(
@@ -270,7 +325,8 @@ class _ViewAttendenceState extends State<ViewAttendence> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const UserDashboard(),
+                            builder: (context) => UserDashboard(widget.token,
+                                widget.SHA1, widget.email, widget.userid),
                           ),
                         );
                         //Navigator.pushNamed(context, 'dashboard');
@@ -279,7 +335,8 @@ class _ViewAttendenceState extends State<ViewAttendence> {
                         Icons.arrow_back_sharp,
                       ),
                       iconSize: width / 12,
-                      color: const Color.fromRGBO(209, 57, 13, 1),
+                      color:
+                          Colors.blue, //const Color.fromRGBO(209, 57, 13, 1),
                     ),
                     SizedBox(
                       width: width / 7,
@@ -298,8 +355,8 @@ class _ViewAttendenceState extends State<ViewAttendence> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ViewAttendence(
-                                newtoken, newuserid, newSHA1, newemail),
+                            builder: (context) => ViewAttendence(newtoken,
+                                newuserid, newSHA1, newemail, newusername),
                           ),
                         );
                       },
@@ -307,7 +364,8 @@ class _ViewAttendenceState extends State<ViewAttendence> {
                         Icons.refresh_outlined,
                       ),
                       iconSize: width / 12,
-                      color: const Color.fromRGBO(209, 57, 13, 1),
+                      color:
+                          Colors.blue, //const Color.fromRGBO(209, 57, 13, 1),
                     ),
                   ],
                 ),
@@ -326,17 +384,29 @@ class _ViewAttendenceState extends State<ViewAttendence> {
               //     ),
               //   ),
               // ),
-              _loadedattendence == null || _loadedattendence.isEmpty
+              _loadedattendence.isEmpty
                   ? Column(
                       children: [
                         SizedBox(
                           height: height / 8,
                         ),
-                        const Center(
-                          child:
-                              //Text("No Attendence data found")
-                              CircularProgressIndicator(),
-                        ),
+                        !_isempty
+                            ? Center(
+                                child:
+                                    //Text("No Attendence data found")
+                                    CircularProgressIndicator(
+                                  color: Colors.blue,
+                                ),
+                              )
+                            : Center(
+                                child:
+                                    //Text("No Attendence data found")
+                                    Text(
+                                  "No Data Found",
+                                  style: TextStyle(
+                                      color: Colors.blue, fontSize: 20),
+                                ),
+                              ),
                       ],
                     )
                   :
@@ -435,6 +505,20 @@ class _ViewAttendenceState extends State<ViewAttendence> {
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _loadedattendence.length,
                           itemBuilder: (context, index) {
+                            String time24 = _loadedattendence[index]
+                                    ["attendanceTime"]
+                                .toString()
+                                .substring(11, 16);
+                            DateTime time =
+                                DateTime.parse("2023-04-12 " + time24 + ":00");
+                            String formattedTime = DateFormat.jm().format(time);
+                            String date = _loadedattendence[index]
+                                    ["attendanceTime"]
+                                .toString()
+                                .substring(0, 10);
+                            DateTime dateTime = DateTime.parse(date);
+                            String formattedDate =
+                                DateFormat('dd-MMMM-yyyy').format(dateTime);
                             return Padding(
                               padding:
                                   const EdgeInsets.only(top: 8.0, bottom: 8),
@@ -540,9 +624,9 @@ class _ViewAttendenceState extends State<ViewAttendence> {
                                             "${index + 1}",
                                             textAlign: TextAlign.justify,
                                             style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 18,
-                                                ),
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                            ),
                                           ),
                                         ),
                                         // Text(
@@ -577,7 +661,7 @@ class _ViewAttendenceState extends State<ViewAttendence> {
                                         Row(
                                           children: [
                                             Text(
-                                              "Date  >>  ${_loadedattendence[index]["attendanceTime"].toString().substring(0, 10)}",
+                                              "Date  >>  $formattedDate",
                                               textAlign: TextAlign.justify,
                                               style: const TextStyle(
                                                   color: Colors.white),
@@ -585,7 +669,7 @@ class _ViewAttendenceState extends State<ViewAttendence> {
                                           ],
                                         ),
                                         Text(
-                                          "Time  >>  ${_loadedattendence[index]["attendanceTime"].toString().substring(11, 16)}",
+                                          "Time  >>  $formattedTime",
                                           textAlign: TextAlign.justify,
                                           style: const TextStyle(
                                               color: Colors.white),

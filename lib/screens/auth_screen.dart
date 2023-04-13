@@ -55,9 +55,9 @@ void checkflogin()async{
     String? val2 = prefinger.getString("SHA12");
     String? val3 = prefinger.getString("sval12");
     //  print('before');
-    // print('email: $val1');
-    // print('SHA1: $val2');
-    // print('sval: $val3');
+    print('email: $val1');
+    print('SHA1: $val2');
+    print('sval: $val3');
     if(val1 != null && val2 != null && val3 != null){
       //print('LOGIN SCREEN');
       //print('fingerprint enable');
@@ -81,7 +81,7 @@ void checkflogin()async{
     super.initState();
     // isKeyBoardvisible =
     //     KeyboardVisibilityProvider.isKeyboardVisible(context);
-    checkLogin();
+    //checkLogin();
     checkflogin();
     initConnectivity();
     _connectivitySubscription =
@@ -160,15 +160,15 @@ void checkflogin()async{
     showDialog(context: context, builder: (BuildContext context) => alert);
   }
 
-  void checkLogin() async {
-    //Here we check if user already login or credential already avalable or not
-    SharedPreferences pref = await SharedPreferences.getInstance();
-    String? val = pref.getString("login");
-    if (val != null) {
-      //Navigator.push(context, MaterialPageRoute(builder: (context)=> const UserDashboard()));
-      Navigator.pushNamedAndRemoveUntil(context, 'dashboard', (route) => false);
-    }
-  }
+  // void checkLogin() async {
+  //   //Here we check if user already login or credential already avalable or not
+  //   SharedPreferences pref = await SharedPreferences.getInstance();
+  //   String? val = pref.getString("login");
+  //   if (val != null) {
+  //     //Navigator.push(context, MaterialPageRoute(builder: (context)=> const UserDashboard()));
+  //     Navigator.pushNamedAndRemoveUntil(context, 'dashboard', (route) => false);
+  //   }
+  // }
 
   @override
   void dispose() {
@@ -268,6 +268,8 @@ void checkflogin()async{
   }
 
   void fingerprintlogin(String email, String SHA) async {
+    print(email);
+    print(SHA);
     print("Finger Print login successfully");
       try {
         Response response = await post(Uri.parse('${globals.apiurl}token'),
@@ -329,12 +331,12 @@ void checkflogin()async{
   void pageRoute(String token, String email1, String username2, String SHA1,
       String userid) async {
     //stored token in shared prefrences
-    SharedPreferences pref = await SharedPreferences.getInstance();
-    await pref.setString('login', token);
-    await pref.setString('username', username2);
-    await pref.setString('SHA1', SHA1);
-    await pref.setString('email', email1);
-    await pref.setString('id', userid);
+    // SharedPreferences pref = await SharedPreferences.getInstance();
+    // await pref.setString('login', token);
+    // await pref.setString('username', username2);
+    // await pref.setString('SHA1', SHA1);
+    // await pref.setString('email', email1);
+    // await pref.setString('id', userid);
     // print("SHA1: $SHA1");
     // print("email: $email1");
     //Navigator.push(context, MaterialPageRoute(builder: (context)=> const UserDashboard()));
@@ -342,7 +344,7 @@ void checkflogin()async{
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => const UserDashboard(),
+        builder: (context) => UserDashboard(token,SHA1,email1,userid),
       ),
     );
     Fluttertoast.showToast(
@@ -392,7 +394,7 @@ void checkflogin()async{
                           //left: 130,
                           ),
                       decoration: const BoxDecoration(
-                        color: Color.fromRGBO(209, 57, 13, 1),
+                        color: Colors.blue,//Color.fromRGBO(209, 57, 13, 1),
                         borderRadius: BorderRadius.only(
                           bottomRight: Radius.circular(70),
                         ),
@@ -415,7 +417,7 @@ void checkflogin()async{
                             : height / 22,
                     bottom: height / 27),
                 color: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0)
-                    ? const Color.fromRGBO(209, 57, 13, 1)
+                    ? Colors.blue//const Color.fromRGBO(209, 57, 13, 1)
                     : Colors.transparent,
                 child: Column(
                   children: [
@@ -434,7 +436,7 @@ void checkflogin()async{
                                       .instance.window.viewInsets.bottom >
                                   0.0)
                               ? Colors.white
-                              : const Color.fromRGBO(209, 57, 13, 1),
+                              : Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
                           //color: const Color.fromRGBO(232, 141, 20, 1),
                           fontSize: width / 12,
                           fontWeight: FontWeight.w900,
@@ -584,7 +586,7 @@ void checkflogin()async{
                           semanticLabel: _passwordVisible
                               ? 'show password'
                               : 'hide password',
-                          color: const Color.fromRGBO(209, 57, 13, 1),
+                          color: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
                         ),
                         onPressed: () {
                           // Update the state i.e. toogle the state of passwordVisible variable
@@ -628,7 +630,7 @@ void checkflogin()async{
                         text: "Forgot Password?",
                         style: const TextStyle(
                           fontSize: 15,
-                          color: Color.fromRGBO(209, 57, 13, 1),
+                          color: Colors.blue,//Color.fromRGBO(209, 57, 13, 1),
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
@@ -652,7 +654,7 @@ void checkflogin()async{
                   width: double.infinity,
                   child: FloatingActionButton.large(
                     //<-- SEE HERE
-                    backgroundColor: const Color.fromRGBO(209, 57, 13, 1),
+                    backgroundColor: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
                     onPressed: () async {
                       dismissKeyboard();
                       login(
@@ -680,7 +682,7 @@ void checkflogin()async{
                       text: const TextSpan(
                         text: "Don't have an account?",
                         style: TextStyle(
-                          color: Color.fromRGBO(209, 57, 13, 1),
+                          color: Colors.blue,//Color.fromRGBO(209, 57, 13, 1),
                         ),
                       ),
                     ),
@@ -689,7 +691,7 @@ void checkflogin()async{
                         text: " Sign up",
                         style: const TextStyle(
                           fontSize: 20,
-                          color: Color.fromRGBO(209, 57, 13, 1),
+                          color: Colors.blue,//Color.fromRGBO(209, 57, 13, 1),
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
@@ -713,7 +715,7 @@ void checkflogin()async{
                     onPressed: () async {
                        final isAuthenticated = await LocalAuthApi.authenticate();
                        if(isAuthenticated){
-                          fingerprintlogin(emailf,passwordf );
+                          fingerprintlogin(emailf,passwordf);
                        }
                       // final isAuthenticated = await LocalAuthApi.authenticate();
                       // isAuthenticated
@@ -748,10 +750,11 @@ void checkflogin()async{
                       Icons.fingerprint_outlined,
                     ),
                     iconSize: 40,
+                    color: Colors.blue,
                   ):SizedBox(),
                 ],),
               ),
-              SizedBox(height: 30,)
+              SizedBox(height: 50,)
               // SizedBox(
               //   width: double.infinity,
               //   child: Container(

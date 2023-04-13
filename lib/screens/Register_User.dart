@@ -459,7 +459,7 @@ class _RegisterUserState extends State<RegisterUser> {
                           //left: 130,
                           ),
                       decoration: const BoxDecoration(
-                        color: Color.fromRGBO(209, 57, 13, 1),
+                        color: Colors.blue,//Color.fromRGBO(209, 57, 13, 1),
                         borderRadius: BorderRadius.only(
                           bottomRight: Radius.circular(70),
                         ),
@@ -476,7 +476,7 @@ class _RegisterUserState extends State<RegisterUser> {
                     ),
               Container(
                 margin: EdgeInsets.only(top: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0)?0: height / 30, bottom: height / 37),
-                color: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0)?const Color.fromRGBO(209, 57, 13, 1): Colors.transparent,
+                color: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0)?Colors.blue: Colors.transparent,//const Color.fromRGBO(209, 57, 13, 1): Colors.transparent,
                 child: Column(
                   children: [
                     (WidgetsBinding.instance.window.viewInsets.bottom > 0.0)?const SizedBox(height: 25,):const SizedBox(),
@@ -496,7 +496,7 @@ class _RegisterUserState extends State<RegisterUser> {
                             Icons.arrow_back_sharp,
                           ),
                           iconSize: width / 12,
-                          color: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0) ? Colors.white: const Color.fromRGBO(209, 57, 13, 1),
+                          color: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0) ? Colors.white: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
                         ),
                         SizedBox(
                           width: width / 7,
@@ -506,7 +506,7 @@ class _RegisterUserState extends State<RegisterUser> {
                           style:
                               // GoogleFonts.openSans(color: const Color.fromRGBO(232, 141, 20, 1),fontSize: 25,),
                               TextStyle(
-                            color: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0) ? Colors.white: const Color.fromRGBO(209, 57, 13, 1),
+                            color: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0) ? Colors.white: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
                             //color: const Color.fromRGBO(232, 141, 20, 1),
                             fontSize: width / 17,
                             fontWeight: FontWeight.w900,
@@ -529,7 +529,7 @@ class _RegisterUserState extends State<RegisterUser> {
                             Icons.refresh_outlined,
                           ),
                           iconSize: width / 12,
-                          color: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0) ? Colors.white: const Color.fromRGBO(209, 57, 13, 1),
+                          color: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0) ? Colors.white: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
                         ),
                       ],
                     ),
@@ -791,7 +791,7 @@ class _RegisterUserState extends State<RegisterUser> {
                           semanticLabel: _passwordVisible
                               ? 'show password'
                               : 'hide password',
-                          color: const Color.fromRGBO(209, 57, 13, 1),
+                          color: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
                         ),
                         onPressed: () {
                           // Update the state i.e. toogle the state of passwordVisible variable
@@ -949,7 +949,7 @@ class _RegisterUserState extends State<RegisterUser> {
                           semanticLabel: _passwordVisible1
                               ? 'show password'
                               : 'hide password',
-                          color: const Color.fromRGBO(209, 57, 13, 1),
+                          color: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
                         ),
                         onPressed: () {
                           // Update the state i.e. toogle the state of passwordVisible variable
@@ -998,7 +998,7 @@ class _RegisterUserState extends State<RegisterUser> {
                     const SizedBox(height: 10,),
                     FloatingActionButton(
                     //<-- SEE HERE
-                    backgroundColor: const Color.fromRGBO(209, 57, 13, 1),
+                    backgroundColor: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
                     onPressed: () async {
                      _getFrontCamera();
                     },
@@ -1091,7 +1091,7 @@ class _RegisterUserState extends State<RegisterUser> {
                   top: height / 55,
                 ),
                 decoration: const BoxDecoration(
-                  color: Color.fromRGBO(209, 57, 13, 1),
+                  color: Colors.blue,//Color.fromRGBO(209, 57, 13, 1),
                   borderRadius: BorderRadius.all(
                     Radius.circular(20),
                   ),
@@ -1117,7 +1117,7 @@ class _RegisterUserState extends State<RegisterUser> {
                       child: const Icon(
                         Icons.person_add_alt_1_sharp,
                         size: 25,
-                        color: Color.fromRGBO(209, 57, 13, 1),
+                        color: Colors.blue,//Color.fromRGBO(209, 57, 13, 1),
                       ),
                     ),
                     FloatingActionButton(
@@ -1129,7 +1129,7 @@ class _RegisterUserState extends State<RegisterUser> {
                       child: const Icon(
                         Icons.arrow_back_sharp,
                         size: 25,
-                        color: Color.fromRGBO(209, 57, 13, 1),
+                        color: Colors.blue,//Color.fromRGBO(209, 57, 13, 1),
                       ),
                     ),
                   ],
@@ -1137,7 +1137,7 @@ class _RegisterUserState extends State<RegisterUser> {
               ),
               //),
               const SizedBox(
-                height: 20,
+                height: 55,
               ),
             ],
           ),

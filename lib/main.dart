@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSwatch().copyWith(
-      primary: const Color.fromRGBO(209, 57, 13, 1),
+      primary: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
       secondary: const Color.fromRGBO(243, 188, 135, 1),
     ),
     textTheme: ThemeData.light().textTheme.copyWith(
@@ -58,7 +58,7 @@ class MyApp extends StatelessWidget {
       routes: {
       //'auth':(context) => const KeyboardVisibilityProvider(child: Auth_Screen()) ,
       'auth':(context) => const Auth_Screen(),
-      'dashboard':(context) => const UserDashboard(),
+      //'dashboard':(context) => UserDashboard(),
       //'RegU':(context) => const KeyboardVisibilityProvider(child:RegisterUser()),
       'RegU':(context) => const RegisterUser(),
       //'vatt':(context) =>  ViewAttendence(),
