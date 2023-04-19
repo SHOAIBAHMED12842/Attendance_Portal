@@ -1,5 +1,5 @@
-
 import 'package:attendence_app_pwc/api/local_auth_api.dart';
+import 'package:attendence_app_pwc/notification_service.dart';
 import 'package:crypto/crypto.dart';
 //import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'globals.dart' as globals;
@@ -29,10 +29,11 @@ class Auth_Screen extends StatefulWidget {
 }
 
 class _Auth_ScreenState extends State<Auth_Screen> {
+  NotificationServices notificationServices = NotificationServices();
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
   GetStorage box = GetStorage();
-  var emailf ,passwordf;
+  var emailf, passwordf;
   final _emailFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
   final _formKey1 = GlobalKey<FormState>();
@@ -46,34 +47,64 @@ class _Auth_ScreenState extends State<Auth_Screen> {
   bool isDeviceConnected = false;
   bool isAlertSet = false;
   bool islogin = false;
-  bool isfingerprintenable=false;
+  bool isfingerprintenable = false;
+  bool isLoading = false;
+  bool isLoadingf = false;
+  var username;
+  var chv;
 
-void checkflogin()async{
-  
-  SharedPreferences prefinger = await SharedPreferences.getInstance();
+  void checkflogin() async {
+    SharedPreferences prefinger = await SharedPreferences.getInstance();
     String? val1 = prefinger.getString("email12");
     String? val2 = prefinger.getString("SHA12");
     String? val3 = prefinger.getString("sval12");
+    String? val4 = prefinger.getString("username");
     //  print('before');
     print('email: $val1');
     print('SHA1: $val2');
     print('sval: $val3');
-    if(val1 != null && val2 != null && val3 != null){
+    print('username: $val4');
+    if (val1 != null && val2 != null && val3 != null) {
       //print('LOGIN SCREEN');
       //print('fingerprint enable');
       setState(() {
-         emailf=val1;
-        passwordf=val2;
-        isfingerprintenable=true;
+        emailf = val1;
+        passwordf = val2;
+        isfingerprintenable = true;
       });
-    }
-    else{
+    } else {
       //print('fingerprint disable');
       setState(() {
-        isfingerprintenable=false;
+        isfingerprintenable = false;
       });
     }
-}
+  }
+
+  void notification() async {
+    notificationServices.initializenotification();
+    SharedPreferences prefinger = await SharedPreferences.getInstance();
+    username = prefinger.getString("username")!;
+    chv = prefinger.getString("CI");
+    print(chv);
+    if (username != null) {
+      if (chv == null) {
+        notificationServices.cancelnotification();
+        notificationServices.bothNotification();
+      } else if (chv == '1') {
+        notificationServices.cancelnotification();
+        notificationServices.schedulecheckoutinnotification("Check-out Alert!",
+            "Respected $username kindly mark check-out.");
+      } else if (chv == '2') {
+        notificationServices.cancelnotification();
+        notificationServices.schedulecheckinnotification("Check-in Alert!",
+            "Respected $username kindly mark check-in.");
+      }
+    } else {
+      notificationServices.cancelnotification();
+      notificationServices.bothNotification();
+    }
+  }
+
   @override
   void initState() {
     _passwordVisible = false;
@@ -83,6 +114,7 @@ void checkflogin()async{
     //     KeyboardVisibilityProvider.isKeyboardVisible(context);
     //checkLogin();
     checkflogin();
+    notification();
     initConnectivity();
     _connectivitySubscription =
         _connectivity.onConnectivityChanged.listen(_UpdateConnectionState);
@@ -195,8 +227,10 @@ void checkflogin()async{
     if (isValid1 && isValid2) {
       _formKey1.currentState!.save();
       _formKey2.currentState!.save();
+      setState(() {
+        isLoading = true;
+      });
       try {
-        
         var SHA1Password = utf8.encode(password);
         var sha1Result = sha1.convert(SHA1Password);
         //  print(email);
@@ -210,7 +244,7 @@ void checkflogin()async{
         //     'password' : password,//pistol
         //   }
         // );
-       
+
         Response response = await post(Uri.parse('${globals.apiurl}token'),
             headers: {
               "Accept": "application/json",
@@ -268,53 +302,42 @@ void checkflogin()async{
   }
 
   void fingerprintlogin(String email, String SHA) async {
+    setState(() {
+      isLoadingf = true;
+    });
     print(email);
     print(SHA);
     print("Finger Print login successfully");
-      try {
-        Response response = await post(Uri.parse('${globals.apiurl}token'),
-            headers: {
-              "Accept": "application/json",
-              "content-type": "application/json"
-            },
-            body: jsonEncode({
-              'email': email, //eve.holt@reqres.in
-              'password': SHA //pistol
-            })).timeout(const Duration(seconds: 25));
+    try {
+      Response response = await post(Uri.parse('${globals.apiurl}token'),
+          headers: {
+            "Accept": "application/json",
+            "content-type": "application/json"
+          },
+          body: jsonEncode({
+            'email': email, //eve.holt@reqres.in
+            'password': SHA //pistol
+          })).timeout(const Duration(seconds: 25));
 
-        if (response.statusCode == 200) {
-          // box.write('email',email);
-          // print(box.read('email').toString());
-          // box.remove('email');
-          setState(() {
-            islogin = true;
-          });
-          var data = jsonDecode(response.body.toString());
-          //print(data);
-          // print("token");
-          // print(data['token']);
-          //print('Login successfully');
-          pageRoute(data['password'], data['email'], data['displayName'],
-              SHA, data['userId'].toString());
-        } else {
-          //print("Soaub ${response.body}");
-          Fluttertoast.showToast(
-            //msg: response.statusCode.toString() + response.body,
-            msg: "Either Server Error Found or Enter Wrong Credentials",
-            //toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            timeInSecForIosWeb: 5,
-            //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-            backgroundColor: Colors.black,
-            textColor: Colors.white,
-            fontSize: 16,
-          );
-          //print('failed');
-        }
-      } catch (e) {
-        print(e.toString());
+      if (response.statusCode == 200) {
+        // box.write('email',email);
+        // print(box.read('email').toString());
+        // box.remove('email');
+        setState(() {
+          islogin = true;
+        });
+        var data = jsonDecode(response.body.toString());
+        //print(data);
+        // print("token");
+        // print(data['token']);
+        //print('Login successfully');
+        pageRoute(data['password'], data['email'], data['displayName'], SHA,
+            data['userId'].toString());
+      } else {
+        //print("Soaub ${response.body}");
         Fluttertoast.showToast(
-          msg: "Internet is not working",
+          //msg: response.statusCode.toString() + response.body,
+          msg: "Either Server Error Found or Enter Wrong Credentials",
           //toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.BOTTOM,
           timeInSecForIosWeb: 5,
@@ -323,9 +346,22 @@ void checkflogin()async{
           textColor: Colors.white,
           fontSize: 16,
         );
-        //print(e.toString());
+        //print('failed');
       }
-    
+    } catch (e) {
+      print(e.toString());
+      Fluttertoast.showToast(
+        msg: "Internet is not working",
+        //toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 5,
+        //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+        backgroundColor: Colors.black,
+        textColor: Colors.white,
+        fontSize: 16,
+      );
+      //print(e.toString());
+    }
   }
 
   void pageRoute(String token, String email1, String username2, String SHA1,
@@ -341,10 +377,16 @@ void checkflogin()async{
     // print("email: $email1");
     //Navigator.push(context, MaterialPageRoute(builder: (context)=> const UserDashboard()));
     //Navigator.pushNamedAndRemoveUntil(context, 'dashboard', (route) => false);
+    setState(() {
+      isLoading = false;
+    });
+    setState(() {
+      isLoadingf = false;
+    });
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => UserDashboard(token,SHA1,email1,userid),
+        builder: (context) => UserDashboard(token, SHA1, email1, userid),
       ),
     );
     Fluttertoast.showToast(
@@ -394,7 +436,7 @@ void checkflogin()async{
                           //left: 130,
                           ),
                       decoration: const BoxDecoration(
-                        color: Colors.blue,//Color.fromRGBO(209, 57, 13, 1),
+                        color: Colors.blue, //Color.fromRGBO(209, 57, 13, 1),
                         borderRadius: BorderRadius.only(
                           bottomRight: Radius.circular(70),
                         ),
@@ -409,6 +451,18 @@ void checkflogin()async{
                         ),
                       ),
                     ),
+              isLoading
+                  ? Center(
+                      child: LinearProgressIndicator(
+                      color: Colors.blue,
+                    ))
+                  : SizedBox.shrink(),
+              isLoadingf
+                  ? Center(
+                      child: LinearProgressIndicator(
+                      color: Colors.blue,
+                    ))
+                  : SizedBox.shrink(),
               Container(
                 margin: EdgeInsets.only(
                     top:
@@ -417,7 +471,7 @@ void checkflogin()async{
                             : height / 22,
                     bottom: height / 27),
                 color: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0)
-                    ? Colors.blue//const Color.fromRGBO(209, 57, 13, 1)
+                    ? Colors.blue //const Color.fromRGBO(209, 57, 13, 1)
                     : Colors.transparent,
                 child: Column(
                   children: [
@@ -436,7 +490,8 @@ void checkflogin()async{
                                       .instance.window.viewInsets.bottom >
                                   0.0)
                               ? Colors.white
-                              : Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
+                              : Colors
+                                  .blue, //const Color.fromRGBO(209, 57, 13, 1),
                           //color: const Color.fromRGBO(232, 141, 20, 1),
                           fontSize: width / 12,
                           fontWeight: FontWeight.w900,
@@ -586,7 +641,8 @@ void checkflogin()async{
                           semanticLabel: _passwordVisible
                               ? 'show password'
                               : 'hide password',
-                          color: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
+                          color: Colors
+                              .blue, //const Color.fromRGBO(209, 57, 13, 1),
                         ),
                         onPressed: () {
                           // Update the state i.e. toogle the state of passwordVisible variable
@@ -630,7 +686,7 @@ void checkflogin()async{
                         text: "Forgot Password?",
                         style: const TextStyle(
                           fontSize: 15,
-                          color: Colors.blue,//Color.fromRGBO(209, 57, 13, 1),
+                          color: Colors.blue, //Color.fromRGBO(209, 57, 13, 1),
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
@@ -645,16 +701,20 @@ void checkflogin()async{
                 height: 15,
               ),
               Container(
-                margin: const EdgeInsets.only(
-                  left: 40,
-                  right: 40,
+                margin: EdgeInsets.only(
+                  left: width / 75,
+                  //right: 40,
                 ),
                 child: SizedBox(
                   height: 75,
                   width: double.infinity,
-                  child: FloatingActionButton.large(
+                  child:
+                      // Stack(
+                      //   children: [
+                      FloatingActionButton.large(
                     //<-- SEE HERE
-                    backgroundColor: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
+                    backgroundColor:
+                        Colors.blue, //const Color.fromRGBO(209, 57, 13, 1),
                     onPressed: () async {
                       dismissKeyboard();
                       login(
@@ -668,8 +728,20 @@ void checkflogin()async{
                       color: !islogin ? Colors.white : Colors.amber,
                     ),
                   ),
+                  //  Positioned.fill(
+                  //     child:
+                  //     isLoading
+                  //         ? Center(
+                  //             child: CircularProgressIndicator(
+                  //             color: Colors.blue,
+                  //           ))
+                  //         : SizedBox.shrink(),
+                  //   ),
+                  //   ],
+                  // ),
                 ),
               ),
+
               const SizedBox(
                 height: 15,
               ),
@@ -682,7 +754,7 @@ void checkflogin()async{
                       text: const TextSpan(
                         text: "Don't have an account?",
                         style: TextStyle(
-                          color: Colors.blue,//Color.fromRGBO(209, 57, 13, 1),
+                          color: Colors.blue, //Color.fromRGBO(209, 57, 13, 1),
                         ),
                       ),
                     ),
@@ -691,7 +763,7 @@ void checkflogin()async{
                         text: " Sign up",
                         style: const TextStyle(
                           fontSize: 20,
-                          color: Colors.blue,//Color.fromRGBO(209, 57, 13, 1),
+                          color: Colors.blue, //Color.fromRGBO(209, 57, 13, 1),
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
@@ -703,58 +775,78 @@ void checkflogin()async{
                   ],
                 ),
               ),
-               const SizedBox(
+              const SizedBox(
                 height: 15,
               ),
               Container(
-                margin: EdgeInsets.only(left: width/2.4),
-                child: Row(children: [
-                  // Text('Login with Finger Print'),
-                  // SizedBox(width: 5,),
-                 isfingerprintenable? IconButton(
-                    onPressed: () async {
-                       final isAuthenticated = await LocalAuthApi.authenticate();
-                       if(isAuthenticated){
-                          fingerprintlogin(emailf,passwordf);
-                       }
-                      // final isAuthenticated = await LocalAuthApi.authenticate();
-                      // isAuthenticated
-                      //     ? Navigator.of(context).pushReplacement(
-                      //         MaterialPageRoute(builder: (context) => HomePage()),
-                      //       )
-                      //     : TweenAnimationBuilder(
-                      //         tween: Tween(begin: 30.0, end: 0),
-                      //         duration: const Duration(seconds: 30),
-                      //         builder: (context, value, child) {
-                      //           double val = value as double;
-                      //           int time = val.toInt();
-                      //           return Text(
-                      //             "Retry in $time to continue",
-                      //             style: const TextStyle(
-                      //               fontSize: 16,
-                      //             ),
-                      //             textAlign: TextAlign.center,
-                      //           );
-                      //         },
-                      //         onEnd: () {
-                      //           Navigator.push(
-                      //             context,
-                      //             MaterialPageRoute(
-                      //               builder: (context) => FingerprintPage(),
-                      //             ),
-                      //           );
-                      //         },
-                      //       );
-                    },
-                    icon: const Icon(
-                      Icons.fingerprint_outlined,
-                    ),
-                    iconSize: 40,
-                    color: Colors.blue,
-                  ):SizedBox(),
-                ],),
+                margin: EdgeInsets.only(left: width / 2.4),
+                child: Row(
+                  children: [
+                    // Text('Login with Finger Print'),
+                    // SizedBox(width: 5,),
+                    isfingerprintenable
+                        ?
+                        // Stack(
+                        //     children: [
+                        IconButton(
+                            onPressed: () async {
+                              final isAuthenticated =
+                                  await LocalAuthApi.authenticate();
+                              if (isAuthenticated) {
+                                fingerprintlogin(emailf, passwordf);
+                              }
+                              // final isAuthenticated = await LocalAuthApi.authenticate();
+                              // isAuthenticated
+                              //     ? Navigator.of(context).pushReplacement(
+                              //         MaterialPageRoute(builder: (context) => HomePage()),
+                              //       )
+                              //     : TweenAnimationBuilder(
+                              //         tween: Tween(begin: 30.0, end: 0),
+                              //         duration: const Duration(seconds: 30),
+                              //         builder: (context, value, child) {
+                              //           double val = value as double;
+                              //           int time = val.toInt();
+                              //           return Text(
+                              //             "Retry in $time to continue",
+                              //             style: const TextStyle(
+                              //               fontSize: 16,
+                              //             ),
+                              //             textAlign: TextAlign.center,
+                              //           );
+                              //         },
+                              //         onEnd: () {
+                              //           Navigator.push(
+                              //             context,
+                              //             MaterialPageRoute(
+                              //               builder: (context) => FingerprintPage(),
+                              //             ),
+                              //           );
+                              //         },
+                              //       );
+                            },
+                            icon: const Icon(
+                              Icons.fingerprint_outlined,
+                            ),
+                            iconSize: 40,
+                            color: Colors.blue,
+                          )
+                        //     Positioned.fill(
+                        //       child: isLoadingf
+                        //           ? Center(
+                        //               child: CircularProgressIndicator(
+                        //               color: Colors.blue,
+                        //             ))
+                        //           : SizedBox.shrink(),
+                        //     ),
+                        //   ],
+                        // )
+                        : SizedBox(),
+                  ],
+                ),
               ),
-              SizedBox(height: 50,)
+              SizedBox(
+                height: 50,
+              ),
               // SizedBox(
               //   width: double.infinity,
               //   child: Container(

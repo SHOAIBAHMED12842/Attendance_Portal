@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 //import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:attendence_app_pwc/screens/auth_screen.dart';
 import 'package:attendence_app_pwc/screens/Register_User.dart';
-import 'package:attendence_app_pwc/screens/user_dashboard.dart';
-import 'package:attendence_app_pwc/screens/view_attendence.dart';
 
 
-void main() {
+void main() async{
   // WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   // FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   // FlutterNativeSplash.remove();

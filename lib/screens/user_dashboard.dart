@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:attendence_app_pwc/api/local_auth_api.dart';
+import 'package:attendence_app_pwc/notification_service.dart';
 
 import 'globals.dart' as globals;
 //import 'dart:typed_data';
@@ -42,6 +43,7 @@ class _UserDashboardState extends State<UserDashboard> {
   //     systemNavigationBarIconBrightness: Brightness.light,
   //     systemNavigationBarDividerColor: Colors.blue,
   //   );
+  NotificationServices notificationServices = NotificationServices();
   bool isSwitched = false;
   var switchf = '0';
   //var textValue = 'Switch is OFF';
@@ -113,6 +115,8 @@ class _UserDashboardState extends State<UserDashboard> {
         setState(() {
           username = data1['displayName'];
         });
+        SharedPreferences prefinger = await SharedPreferences.getInstance();
+        await prefinger.setString('username', username);
         _getAttendenceData();
       } else {
         Fluttertoast.showToast(
@@ -191,6 +195,12 @@ class _UserDashboardState extends State<UserDashboard> {
             });
             // print(time3);
             // print(clientid);
+            SharedPreferences prefinger = await SharedPreferences.getInstance();
+            await prefinger.setString('CI', '1');
+            notificationServices.cancelnotification();
+            notificationServices.schedulecheckoutinnotification(
+                "Check-out Alert!",
+                "Respected $username kindly mark the check-out.");
             Fluttertoast.showToast(
               msg: "Last Check-in at ${_lastattendence["client"]["fldName"]}",
               //toastLength: Toast.LENGTH_SHORT,
@@ -203,17 +213,17 @@ class _UserDashboardState extends State<UserDashboard> {
             );
             check_two_times_is_before();
             _timerstart();
-            Fluttertoast.showToast(
-              //msg: response.statusCode.toString() + response.body,
-              msg: "Clients is ready to show!",
-              //toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              timeInSecForIosWeb: 5,
-              //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-              backgroundColor: Colors.black,
-              textColor: Colors.white,
-              fontSize: 16,
-            );
+            // Fluttertoast.showToast(
+            //   //msg: response.statusCode.toString() + response.body,
+            //   msg: "Clients is ready to show!",
+            //   //toastLength: Toast.LENGTH_SHORT,
+            //   gravity: ToastGravity.BOTTOM,
+            //   timeInSecForIosWeb: 5,
+            //   //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+            //   backgroundColor: Colors.black,
+            //   textColor: Colors.white,
+            //   fontSize: 16,
+            // );
           } else {
             print('user checkout');
             print(_lastattendence["client"]["fldID"]);
@@ -227,6 +237,11 @@ class _UserDashboardState extends State<UserDashboard> {
               time12 = "";
               attendencedate = "";
             });
+            SharedPreferences prefinger = await SharedPreferences.getInstance();
+            await prefinger.setString('CI', '2');
+            notificationServices.cancelnotification();
+            notificationServices.schedulecheckinnotification("Check-in Alert!",
+                "Respected $username kindly mark the check-in.");
             Fluttertoast.showToast(
               msg:
                   "Last Check-out at ${_lastattendence["client"]["fldName"]} now you can select client",
@@ -238,17 +253,17 @@ class _UserDashboardState extends State<UserDashboard> {
               textColor: Colors.white,
               fontSize: 16,
             );
-            Fluttertoast.showToast(
-              //msg: response.statusCode.toString() + response.body,
-              msg: "Clients is ready to show!",
-              //toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              timeInSecForIosWeb: 5,
-              //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-              backgroundColor: Colors.black,
-              textColor: Colors.white,
-              fontSize: 16,
-            );
+            // Fluttertoast.showToast(
+            //   //msg: response.statusCode.toString() + response.body,
+            //   msg: "Clients is ready to show!",
+            //   //toastLength: Toast.LENGTH_SHORT,
+            //   gravity: ToastGravity.BOTTOM,
+            //   timeInSecForIosWeb: 5,
+            //   //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
+            //   backgroundColor: Colors.black,
+            //   textColor: Colors.white,
+            //   fontSize: 16,
+            // );
           }
         } else {
           setState(() {
@@ -371,6 +386,7 @@ class _UserDashboardState extends State<UserDashboard> {
     userid = widget.userid1;
     SHA1 = widget.SHA11;
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {});
+    notificationServices.initializenotification();
     initConnectivity();
     _connectivitySubscription =
         _connectivity.onConnectivityChanged.listen(_UpdateConnectionState);
@@ -1126,7 +1142,7 @@ class _UserDashboardState extends State<UserDashboard> {
                       child: Image.asset(
                         'assets/images/attendence6.png',
                         //width: 100,
-                        height: width / 2.5,
+                        height: height / 6,
                         color: Colors.white,
                         //fit: BoxFit.fill,
                       ),
