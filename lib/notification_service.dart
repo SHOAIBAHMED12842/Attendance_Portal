@@ -277,6 +277,81 @@ void scheduleboth2notification(String title, String body) async {
     notificationDetails,
   );
 }
+void newusernotification(){
+cancelnotification();
+schedulenewuser1notification('Newuser Check-in/Check-out Alert!', 'Kindly mark either check-in or check-out.');
+schedulenewuser2notification('Newuser Check-in/Check-out Alert!', 'Kindly mark either check-in or check-out.');
+}
+void schedulenewuser1notification(String title, String body) async {
+  print('inside both1 function');
+  //await _flutterLocalNotificationsPlugin.cancel(1);
+  AndroidNotificationDetails _androidNotificationDetails =
+      const AndroidNotificationDetails(
+    "channelId",
+    "channelName",
+    //"notification",
+    importance: Importance.high,
+    priority: Priority.high,
+  );
+  NotificationDetails notificationDetails = NotificationDetails(
+    android: _androidNotificationDetails,
+  );
+
+  // Set the time for 11 AM
+  var time = const Time(11, 0, 0);
+
+  // Check if the time has already passed for today
+  var now = DateTime.now();
+  var scheduledTime = DateTime(now.year, now.month, now.day, time.hour, time.minute, time.second);
+  if (scheduledTime.isBefore(now)) {
+    scheduledTime = scheduledTime.add(const Duration(days: 1));
+  }
+
+  // Schedule the notification to show at 11 AM every day
+  // ignore: deprecated_member_use
+  await _flutterLocalNotificationsPlugin.showDailyAtTime(
+    4,
+    title,
+    body,
+    time,
+    notificationDetails,
+  );
+}
+void schedulenewuser2notification(String title, String body) async {
+  print('inside both1 function');
+  //await _flutterLocalNotificationsPlugin.cancel(1);
+  AndroidNotificationDetails _androidNotificationDetails =
+      const AndroidNotificationDetails(
+    "channelId",
+    "channelName",
+    //"notification",
+    importance: Importance.high,
+    priority: Priority.high,
+  );
+  NotificationDetails notificationDetails = NotificationDetails(
+    android: _androidNotificationDetails,
+  );
+
+  // Set the time for 11 AM
+  var time = const Time(23, 0, 0);
+
+  // Check if the time has already passed for today
+  var now = DateTime.now();
+  var scheduledTime = DateTime(now.year, now.month, now.day, time.hour, time.minute, time.second);
+  if (scheduledTime.isBefore(now)) {
+    scheduledTime = scheduledTime.add(const Duration(days: 1));
+  }
+
+  // Schedule the notification to show at 11 AM every day
+  // ignore: deprecated_member_use
+  await _flutterLocalNotificationsPlugin.showDailyAtTime(
+    5,
+    title,
+    body,
+    time,
+    notificationDetails,
+  );
+}
   void stopnotification()async{
       await _flutterLocalNotificationsPlugin.cancel(0);
   }
