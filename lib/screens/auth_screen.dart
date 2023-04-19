@@ -99,6 +99,9 @@ class _Auth_ScreenState extends State<Auth_Screen> {
         notificationServices.schedulecheckinnotification("Check-in Alert!",
             "Respected $username kindly mark check-in.");
       }
+      else if (chv == '3') {
+        notificationServices.newusernotification();
+      }
     } else {
       notificationServices.cancelnotification();
       notificationServices.bothNotification();

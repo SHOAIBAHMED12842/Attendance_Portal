@@ -275,6 +275,9 @@ class _UserDashboardState extends State<UserDashboard> {
             time12 = "";
             attendencedate = "";
           });
+          SharedPreferences prefinger = await SharedPreferences.getInstance();
+            await prefinger.setString('CI', '3');
+          notificationServices.newusernotification();
           Fluttertoast.showToast(
             msg: "$username is a new user",
             //toastLength: Toast.LENGTH_SHORT,
