@@ -332,7 +332,7 @@ void schedulenewuser2notification(String title, String body) async {
     android: _androidNotificationDetails,
   );
 
-  // Set the time for 11 AM
+  // Set the time for 11 PM
   var time = const Time(23, 0, 0);
 
   // Check if the time has already passed for today
