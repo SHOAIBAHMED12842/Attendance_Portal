@@ -1,23 +1,16 @@
-import 'package:attendence_app_pwc/api/local_auth_api.dart';
-import 'package:attendence_app_pwc/notification_service.dart';
+import 'package:attendence_app_pwc/services/local_auth_api.dart';
+import 'package:attendence_app_pwc/services/utils.dart';
 import 'package:crypto/crypto.dart';
-//import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'globals.dart' as globals;
-//import 'package:convert/convert.dart';
 import 'dart:convert';
 import 'dart:async';
-//import 'package:google_fonts/google_fonts.dart';
 import 'package:attendence_app_pwc/screens/user_dashboard.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
-//import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:http/http.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:get_storage/get_storage.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
@@ -29,10 +22,9 @@ class Auth_Screen extends StatefulWidget {
 }
 
 class _Auth_ScreenState extends State<Auth_Screen> {
-  NotificationServices notificationServices = NotificationServices();
+  utilsservices snackbar = utilsservices();
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
-  GetStorage box = GetStorage();
   var emailf, passwordf;
   final _emailFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
@@ -59,52 +51,16 @@ class _Auth_ScreenState extends State<Auth_Screen> {
     String? val2 = prefinger.getString("SHA12");
     String? val3 = prefinger.getString("sval12");
     String? val4 = prefinger.getString("username");
-    //  print('before');
-    print('email: $val1');
-    print('SHA1: $val2');
-    print('sval: $val3');
-    print('username: $val4');
     if (val1 != null && val2 != null && val3 != null) {
-      //print('LOGIN SCREEN');
-      //print('fingerprint enable');
       setState(() {
         emailf = val1;
         passwordf = val2;
         isfingerprintenable = true;
       });
     } else {
-      //print('fingerprint disable');
       setState(() {
         isfingerprintenable = false;
       });
-    }
-  }
-
-  void notification() async {
-    notificationServices.initializenotification();
-    SharedPreferences prefinger = await SharedPreferences.getInstance();
-    username = prefinger.getString("username")!;
-    chv = prefinger.getString("CI");
-    print(chv);
-    if (username != null) {
-      if (chv == null) {
-        notificationServices.cancelnotification();
-        notificationServices.bothNotification();
-      } else if (chv == '1') {
-        notificationServices.cancelnotification();
-        notificationServices.schedulecheckoutinnotification("Check-out Alert!",
-            "Respected $username kindly mark check-out.");
-      } else if (chv == '2') {
-        notificationServices.cancelnotification();
-        notificationServices.schedulecheckinnotification("Check-in Alert!",
-            "Respected $username kindly mark check-in.");
-      }
-      else if (chv == '3') {
-        notificationServices.newusernotification();
-      }
-    } else {
-      notificationServices.cancelnotification();
-      notificationServices.bothNotification();
     }
   }
 
@@ -117,7 +73,7 @@ class _Auth_ScreenState extends State<Auth_Screen> {
     //     KeyboardVisibilityProvider.isKeyboardVisible(context);
     //checkLogin();
     checkflogin();
-    notification();
+    snackbar.notification();
     initConnectivity();
     _connectivitySubscription =
         _connectivity.onConnectivityChanged.listen(_UpdateConnectionState);
@@ -180,31 +136,6 @@ class _Auth_ScreenState extends State<Auth_Screen> {
     _passwordFocusNode.unfocus();
   }
 
-  void showError(dynamic ex) {
-    showMessage(ex.toString());
-  }
-
-  void showMessage(String text) {
-    var alert = AlertDialog(content: Text(text), actions: <Widget>[
-      TextButton(
-          child: const Text('Ok'),
-          onPressed: () {
-            Navigator.pop(context);
-          })
-    ]);
-    showDialog(context: context, builder: (BuildContext context) => alert);
-  }
-
-  // void checkLogin() async {
-  //   //Here we check if user already login or credential already avalable or not
-  //   SharedPreferences pref = await SharedPreferences.getInstance();
-  //   String? val = pref.getString("login");
-  //   if (val != null) {
-  //     //Navigator.push(context, MaterialPageRoute(builder: (context)=> const UserDashboard()));
-  //     Navigator.pushNamedAndRemoveUntil(context, 'dashboard', (route) => false);
-  //   }
-  // }
-
   @override
   void dispose() {
     //print(config.toString());
@@ -214,14 +145,6 @@ class _Auth_ScreenState extends State<Auth_Screen> {
     super.dispose();
   }
 
-  static Future<void> openphone() async {
-    Uri phoneno = Uri.parse('tel: +923322045416'); //'tel:+923041112482'
-    if (await launchUrl(phoneno)) {
-      //dialer opened
-    } else {
-      //dailer is not opened
-    }
-  }
 
   void login(String email, String password) async {
     final isValid1 = _formKey1.currentState!.validate();
@@ -236,17 +159,6 @@ class _Auth_ScreenState extends State<Auth_Screen> {
       try {
         var SHA1Password = utf8.encode(password);
         var sha1Result = sha1.convert(SHA1Password);
-        //  print(email);
-        //  print(password);
-        //  print(SHA1Password);
-        //  print('SHA1: $sha1Result');
-        // Response response = await post(
-        //   Uri.parse('https://reqres.in/api/login'),
-        //   body: {
-        //     'email' : email,//eve.holt@reqres.in
-        //     'password' : password,//pistol
-        //   }
-        // );
 
         Response response = await post(Uri.parse('${globals.apiurl}token'),
             headers: {
@@ -259,47 +171,18 @@ class _Auth_ScreenState extends State<Auth_Screen> {
             })).timeout(const Duration(seconds: 25));
 
         if (response.statusCode == 200) {
-          // box.write('email',email);
-          // print(box.read('email').toString());
-          // box.remove('email');
           setState(() {
             islogin = true;
           });
           var data = jsonDecode(response.body.toString());
-          //print(data);
-          // print("token");
-          // print(data['token']);
-          //print('Login successfully');
           pageRoute(data['password'], data['email'], data['displayName'],
               sha1Result.toString(), data['userId'].toString());
         } else {
-          //print("Soaub ${response.body}");
-          Fluttertoast.showToast(
-            //msg: response.statusCode.toString() + response.body,
-            msg: "Either Server Error Found or Enter Wrong Credentials",
-            //toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            timeInSecForIosWeb: 5,
-            //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-            backgroundColor: Colors.black,
-            textColor: Colors.white,
-            fontSize: 16,
-          );
-          print('failed');
+          snackbar.showsnackbar(
+              "Either Server Error Found or Enter Wrong Credentials");
         }
       } catch (e) {
-        print(e.toString());
-        Fluttertoast.showToast(
-          msg: "Internet is not working",
-          //toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 5,
-          //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-          backgroundColor: Colors.black,
-          textColor: Colors.white,
-          fontSize: 16,
-        );
-        //print(e.toString());
+        snackbar.showsnackbar("Internet is not working");
       }
     }
   }
@@ -310,7 +193,6 @@ class _Auth_ScreenState extends State<Auth_Screen> {
     });
     print(email);
     print(SHA);
-    print("Finger Print login successfully");
     try {
       Response response = await post(Uri.parse('${globals.apiurl}token'),
           headers: {
@@ -323,63 +205,23 @@ class _Auth_ScreenState extends State<Auth_Screen> {
           })).timeout(const Duration(seconds: 25));
 
       if (response.statusCode == 200) {
-        // box.write('email',email);
-        // print(box.read('email').toString());
-        // box.remove('email');
         setState(() {
           islogin = true;
         });
         var data = jsonDecode(response.body.toString());
-        //print(data);
-        // print("token");
-        // print(data['token']);
-        //print('Login successfully');
         pageRoute(data['password'], data['email'], data['displayName'], SHA,
             data['userId'].toString());
       } else {
-        //print("Soaub ${response.body}");
-        Fluttertoast.showToast(
-          //msg: response.statusCode.toString() + response.body,
-          msg: "Either Server Error Found or Enter Wrong Credentials",
-          //toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 5,
-          //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-          backgroundColor: Colors.black,
-          textColor: Colors.white,
-          fontSize: 16,
-        );
-        //print('failed');
+        snackbar.showsnackbar(
+            "Either Server Error Found or Enter Wrong Credentials");
       }
     } catch (e) {
-      print(e.toString());
-      Fluttertoast.showToast(
-        msg: "Internet is not working",
-        //toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 5,
-        //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16,
-      );
-      //print(e.toString());
+      snackbar.showsnackbar("Internet is not working");
     }
   }
 
   void pageRoute(String token, String email1, String username2, String SHA1,
       String userid) async {
-    //stored token in shared prefrences
-    // SharedPreferences pref = await SharedPreferences.getInstance();
-    // await pref.setString('login', token);
-    // await pref.setString('username', username2);
-    // await pref.setString('SHA1', SHA1);
-    // await pref.setString('email', email1);
-    // await pref.setString('id', userid);
-    // print("SHA1: $SHA1");
-    // print("email: $email1");
-    //Navigator.push(context, MaterialPageRoute(builder: (context)=> const UserDashboard()));
-    //Navigator.pushNamedAndRemoveUntil(context, 'dashboard', (route) => false);
     setState(() {
       isLoading = false;
     });
@@ -392,16 +234,7 @@ class _Auth_ScreenState extends State<Auth_Screen> {
         builder: (context) => UserDashboard(token, SHA1, email1, userid),
       ),
     );
-    Fluttertoast.showToast(
-      msg: "Welcome $username2 to TCRA Attendence Portal",
-      //toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.BOTTOM,
-      timeInSecForIosWeb: 3,
-      //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-      backgroundColor: Colors.black,
-      textColor: Colors.white,
-      fontSize: 16,
-    );
+    snackbar.showsnackbar("Welcome $username2 to TCRA Attendence Portal");
   }
 
   double height = 0;
@@ -693,7 +526,7 @@ class _Auth_ScreenState extends State<Auth_Screen> {
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
-                            openphone();
+                            utilsservices.openphone();
                           },
                       ),
                     ),
@@ -731,17 +564,6 @@ class _Auth_ScreenState extends State<Auth_Screen> {
                       color: !islogin ? Colors.white : Colors.amber,
                     ),
                   ),
-                  //  Positioned.fill(
-                  //     child:
-                  //     isLoading
-                  //         ? Center(
-                  //             child: CircularProgressIndicator(
-                  //             color: Colors.blue,
-                  //           ))
-                  //         : SizedBox.shrink(),
-                  //   ),
-                  //   ],
-                  // ),
                 ),
               ),
 
@@ -785,47 +607,14 @@ class _Auth_ScreenState extends State<Auth_Screen> {
                 margin: EdgeInsets.only(left: width / 2.4),
                 child: Row(
                   children: [
-                    // Text('Login with Finger Print'),
-                    // SizedBox(width: 5,),
                     isfingerprintenable
-                        ?
-                        // Stack(
-                        //     children: [
-                        IconButton(
+                        ? IconButton(
                             onPressed: () async {
                               final isAuthenticated =
                                   await LocalAuthApi.authenticate();
                               if (isAuthenticated) {
                                 fingerprintlogin(emailf, passwordf);
                               }
-                              // final isAuthenticated = await LocalAuthApi.authenticate();
-                              // isAuthenticated
-                              //     ? Navigator.of(context).pushReplacement(
-                              //         MaterialPageRoute(builder: (context) => HomePage()),
-                              //       )
-                              //     : TweenAnimationBuilder(
-                              //         tween: Tween(begin: 30.0, end: 0),
-                              //         duration: const Duration(seconds: 30),
-                              //         builder: (context, value, child) {
-                              //           double val = value as double;
-                              //           int time = val.toInt();
-                              //           return Text(
-                              //             "Retry in $time to continue",
-                              //             style: const TextStyle(
-                              //               fontSize: 16,
-                              //             ),
-                              //             textAlign: TextAlign.center,
-                              //           );
-                              //         },
-                              //         onEnd: () {
-                              //           Navigator.push(
-                              //             context,
-                              //             MaterialPageRoute(
-                              //               builder: (context) => FingerprintPage(),
-                              //             ),
-                              //           );
-                              //         },
-                              //       );
                             },
                             icon: const Icon(
                               Icons.fingerprint_outlined,
@@ -833,16 +622,6 @@ class _Auth_ScreenState extends State<Auth_Screen> {
                             iconSize: 40,
                             color: Colors.blue,
                           )
-                        //     Positioned.fill(
-                        //       child: isLoadingf
-                        //           ? Center(
-                        //               child: CircularProgressIndicator(
-                        //               color: Colors.blue,
-                        //             ))
-                        //           : SizedBox.shrink(),
-                        //     ),
-                        //   ],
-                        // )
                         : SizedBox(),
                   ],
                 ),
@@ -850,18 +629,6 @@ class _Auth_ScreenState extends State<Auth_Screen> {
               SizedBox(
                 height: 50,
               ),
-              // SizedBox(
-              //   width: double.infinity,
-              //   child: Container(
-              //     margin: const EdgeInsets.only(top: 50, left: 50, right: 50),
-              //     child: Image.asset(
-              //       'assets/images/PricewaterhouseCoopers_Logo.svg.png',
-              //       //width: 100,
-              //       height: 100,
-              //       //fit: BoxFit.fill,
-              //     ),
-              //   ),
-              // ),
             ],
           ),
         ),

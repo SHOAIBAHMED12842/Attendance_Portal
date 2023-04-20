@@ -1,17 +1,13 @@
 import 'dart:io';
 import 'package:attendence_app_pwc/screens/auth_screen.dart';
+import 'package:attendence_app_pwc/services/utils.dart';
 import 'globals.dart' as globals;
-import 'package:flutter/gestures.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:crypto/crypto.dart';
-//import 'package:google_fonts/google_fonts.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-//import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'dart:async';
 
 //import 'package:convert/convert.dart';
@@ -26,6 +22,7 @@ class RegisterUser extends StatefulWidget {
 }
 
 class _RegisterUserState extends State<RegisterUser> {
+  utilsservices snackbar = utilsservices();
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
   File? imageFile;
@@ -50,10 +47,6 @@ class _RegisterUserState extends State<RegisterUser> {
   String placeValue = '';
   List _loadedemail = [];
   List _loadedusername = [];
-  // List _loadedemail1 = [];
-  // List _loadedusername1 = [];
-  // var _isusernameexist = false;
-  // var _isemailexist = false;
   var usernameget;
   var emailget;
   late StreamSubscription subscription;
@@ -142,52 +135,11 @@ class _RegisterUserState extends State<RegisterUser> {
         for (var element in data) {
           _loadedusername.add(element['displayName']);
         }
-        //print(_loadedusername);
-        // setState(() {
-        //   _loadedusername1 = _loadedusername;
-        // });
-        // print("_loadedusername");
-        // print(_loadedusername);
-        // print("_loadedusername1");
-        // print(_loadedusername1);
-        //print(_loadedattendence);
-        // Fluttertoast.showToast(
-        //   //msg: response.statusCode.toString() + response.body,
-        //   msg: "Retrive Attendence Details Successfully!",
-        //   //toastLength: Toast.LENGTH_SHORT,
-        //   gravity: ToastGravity.BOTTOM,
-        //   timeInSecForIosWeb: 5,
-        //   //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-        //   backgroundColor: Colors.black,
-        //   textColor: Colors.white,
-        //   fontSize: 16,
-        // );
       } else {
-        Fluttertoast.showToast(
-          //msg: response.statusCode.toString() + response.body,
-          msg: "Server Error Found",
-          //toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 5,
-          //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-          backgroundColor: Colors.black,
-          textColor: Colors.white,
-          fontSize: 16,
-        );
+        snackbar.showsnackbar("Server Error Found");
       }
     } catch (e) {
-      //print(e.toString());
-      // Fluttertoast.showToast(
-      //   msg: "Internet is not working Kindly Connect it",
-      //   //toastLength: Toast.LENGTH_SHORT,
-      //   gravity: ToastGravity.BOTTOM,
-      //   timeInSecForIosWeb: 5,
-      //   //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-      //   backgroundColor: Colors.black,
-      //   textColor: Colors.white,
-      //   fontSize: 16,
-      // );
-      //print(e.toString());
+      print(e.toString());
     }
   }
 
@@ -208,52 +160,11 @@ class _RegisterUserState extends State<RegisterUser> {
         for (var element in data) {
           _loadedemail.add(element['email']);
         }
-        // print(_loadedemail);
-        // setState(() {
-        //   _loadedemail1 = _loadedemail;
-        // });
-        // print("_loadedemail");
-        // print(_loadedemail);
-        // print("_loadedemail1");
-        // print(_loadedemail1);
-        //print(_loadedattendence);
-        // Fluttertoast.showToast(
-        //   //msg: response.statusCode.toString() + response.body,
-        //   msg: "Retrive Attendence Details Successfully!",
-        //   //toastLength: Toast.LENGTH_SHORT,
-        //   gravity: ToastGravity.BOTTOM,
-        //   timeInSecForIosWeb: 5,
-        //   //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-        //   backgroundColor: Colors.black,
-        //   textColor: Colors.white,
-        //   fontSize: 16,
-        // );
       } else {
-        Fluttertoast.showToast(
-          //msg: response.statusCode.toString() + response.body,
-          msg: "Server Error Found",
-          //toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 5,
-          //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-          backgroundColor: Colors.black,
-          textColor: Colors.white,
-          fontSize: 16,
-        );
+        snackbar.showsnackbar("Server Error Found");
       }
     } catch (e) {
       print(e.toString());
-      // Fluttertoast.showToast(
-      //   msg: "Internet is not working Kindly Connect it",
-      //   //toastLength: Toast.LENGTH_SHORT,
-      //   gravity: ToastGravity.BOTTOM,
-      //   timeInSecForIosWeb: 5,
-      //   //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-      //   backgroundColor: Colors.black,
-      //   textColor: Colors.white,
-      //   fontSize: 16,
-      // );
-      //print(e.toString());
     }
   }
 
@@ -280,12 +191,8 @@ class _RegisterUserState extends State<RegisterUser> {
       //imageQuality: 200
     ));
     setState(() {
-      //imageFile=File(pickedFile!.path);
       imageFile = File(pickedFile!.path);
     });
-    print(imageFile);
-    //Navigator.pushNamed(context, 'RegU');
-    //Navigator.pop(context,true);
   }
 
   void register(
@@ -304,8 +211,6 @@ class _RegisterUserState extends State<RegisterUser> {
         setState(() {
           emailget = item;
         });
-        //print(_isemailexist);
-        //print(item);
       }
     });
     final isValid1 = _formKey1.currentState!.validate();
@@ -340,65 +245,19 @@ class _RegisterUserState extends State<RegisterUser> {
                 'createdDate': null
               })).timeout(const Duration(seconds: 25));
           if (response.statusCode == 200) {
-            // box.write('email',email);
-            // print(box.read('email').toString());
-            // box.remove('email');
             var data = jsonDecode(response.body.toString());
-            //print(data);
-            // print("token");
-            // print(data['token']);
-            //print('Login successfully');
 
             Navigator.pushNamedAndRemoveUntil(
                 context, 'auth', (route) => false);
-            Fluttertoast.showToast(
-              msg: "$username1 Register Successfully",
-              //toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              timeInSecForIosWeb: 3,
-              //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-              backgroundColor: Colors.black,
-              textColor: Colors.white,
-              fontSize: 16,
-            );
+            snackbar.showsnackbar("$username1 Register Successfully");
           } else {
-            Fluttertoast.showToast(
-              msg: "Server Error Found",
-              //toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              timeInSecForIosWeb: 5,
-              //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-              backgroundColor: Colors.black,
-              textColor: Colors.white,
-              fontSize: 16,
-            );
-            //print('failed');
+            snackbar.showsnackbar("Server Error Found");
           }
         } catch (e) {
-          print(e.toString());
-          Fluttertoast.showToast(
-            msg: "Internet is not working",
-            //toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            timeInSecForIosWeb: 5,
-            //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-            backgroundColor: Colors.black,
-            textColor: Colors.white,
-            fontSize: 16,
-          );
-          //print(e.toString());
+          snackbar.showsnackbar("Internet is not working");
         }
       } else {
-        Fluttertoast.showToast(
-          msg: "Kindly Capture Your Image",
-          //toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 3,
-          //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-          backgroundColor: Colors.black,
-          textColor: Colors.white,
-          fontSize: 16,
-        );
+        snackbar.showsnackbar("Kindly Capture Your Image");
       }
     }
   }
@@ -408,40 +267,15 @@ class _RegisterUserState extends State<RegisterUser> {
 
   @override
   Widget build(BuildContext context) {
-    // final bool isKeyBoardvisible =
-    //     KeyboardVisibilityProvider.isKeyboardVisible(context);
     final deviceSize = MediaQuery.of(context).size;
     height = MediaQuery.of(context).size.height;
     width = MediaQuery.of(context).size.width;
     return Scaffold(
       //backgroundColor: const Color.fromRGBO(255, 230, 230, 1),
       resizeToAvoidBottomInset: false,
-      // appBar: AppBar(
-      //   backgroundColor: const Color.fromRGBO(209, 57, 13, 1),
-      //   toolbarHeight: 80,
-      //   title: Container(
-      //     margin: const EdgeInsets.only(left: 65),
-      //     child: const Text(
-      //       'Registration',
-      //       style: TextStyle(
-      //         fontWeight: FontWeight.bold,
-      //       ),
-      //     ),
-      //   ),
-      //   leading: IconButton(
-      //     onPressed: () {
-      //       Navigator.pushNamed(context, 'auth');
-      //     },
-      //     icon: const Icon(
-      //       Icons.arrow_back,
-      //       color: Colors.white,
-      //     ),
-      //   ),
-      // ),
+
       body: SingleChildScrollView(
         child: SizedBox(
-          //height: deviceSize.height,
-          //width: deviceSize.width,
           width: width,
           child: Column(
             children: [
@@ -459,7 +293,7 @@ class _RegisterUserState extends State<RegisterUser> {
                           //left: 130,
                           ),
                       decoration: const BoxDecoration(
-                        color: Colors.blue,//Color.fromRGBO(209, 57, 13, 1),
+                        color: Colors.blue, //Color.fromRGBO(209, 57, 13, 1),
                         borderRadius: BorderRadius.only(
                           bottomRight: Radius.circular(70),
                         ),
@@ -475,11 +309,23 @@ class _RegisterUserState extends State<RegisterUser> {
                       ),
                     ),
               Container(
-                margin: EdgeInsets.only(top: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0)?0: height / 30, bottom: height / 37),
-                color: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0)?Colors.blue: Colors.transparent,//const Color.fromRGBO(209, 57, 13, 1): Colors.transparent,
+                margin: EdgeInsets.only(
+                    top:
+                        (WidgetsBinding.instance.window.viewInsets.bottom > 0.0)
+                            ? 0
+                            : height / 30,
+                    bottom: height / 37),
+                color: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0)
+                    ? Colors.blue
+                    : Colors
+                        .transparent, //const Color.fromRGBO(209, 57, 13, 1): Colors.transparent,
                 child: Column(
                   children: [
-                    (WidgetsBinding.instance.window.viewInsets.bottom > 0.0)?const SizedBox(height: 25,):const SizedBox(),
+                    (WidgetsBinding.instance.window.viewInsets.bottom > 0.0)
+                        ? const SizedBox(
+                            height: 25,
+                          )
+                        : const SizedBox(),
                     Row(
                       children: [
                         IconButton(
@@ -496,7 +342,12 @@ class _RegisterUserState extends State<RegisterUser> {
                             Icons.arrow_back_sharp,
                           ),
                           iconSize: width / 12,
-                          color: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0) ? Colors.white: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
+                          color: (WidgetsBinding
+                                      .instance.window.viewInsets.bottom >
+                                  0.0)
+                              ? Colors.white
+                              : Colors
+                                  .blue, //const Color.fromRGBO(209, 57, 13, 1),
                         ),
                         SizedBox(
                           width: width / 7,
@@ -506,7 +357,12 @@ class _RegisterUserState extends State<RegisterUser> {
                           style:
                               // GoogleFonts.openSans(color: const Color.fromRGBO(232, 141, 20, 1),fontSize: 25,),
                               TextStyle(
-                            color: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0) ? Colors.white: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
+                            color: (WidgetsBinding
+                                        .instance.window.viewInsets.bottom >
+                                    0.0)
+                                ? Colors.white
+                                : Colors
+                                    .blue, //const Color.fromRGBO(209, 57, 13, 1),
                             //color: const Color.fromRGBO(232, 141, 20, 1),
                             fontSize: width / 17,
                             fontWeight: FontWeight.w900,
@@ -529,11 +385,20 @@ class _RegisterUserState extends State<RegisterUser> {
                             Icons.refresh_outlined,
                           ),
                           iconSize: width / 12,
-                          color: (WidgetsBinding.instance.window.viewInsets.bottom > 0.0) ? Colors.white: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
+                          color: (WidgetsBinding
+                                      .instance.window.viewInsets.bottom >
+                                  0.0)
+                              ? Colors.white
+                              : Colors
+                                  .blue, //const Color.fromRGBO(209, 57, 13, 1),
                         ),
                       ],
                     ),
-                    (WidgetsBinding.instance.window.viewInsets.bottom > 0.0)?const SizedBox(height: 10,):const SizedBox(),
+                    (WidgetsBinding.instance.window.viewInsets.bottom > 0.0)
+                        ? const SizedBox(
+                            height: 10,
+                          )
+                        : const SizedBox(),
                   ],
                 ),
               ),
@@ -791,7 +656,8 @@ class _RegisterUserState extends State<RegisterUser> {
                           semanticLabel: _passwordVisible
                               ? 'show password'
                               : 'hide password',
-                          color: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
+                          color: Colors
+                              .blue, //const Color.fromRGBO(209, 57, 13, 1),
                         ),
                         onPressed: () {
                           // Update the state i.e. toogle the state of passwordVisible variable
@@ -949,7 +815,8 @@ class _RegisterUserState extends State<RegisterUser> {
                           semanticLabel: _passwordVisible1
                               ? 'show password'
                               : 'hide password',
-                          color: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
+                          color: Colors
+                              .blue, //const Color.fromRGBO(209, 57, 13, 1),
                         ),
                         onPressed: () {
                           // Update the state i.e. toogle the state of passwordVisible variable
@@ -995,94 +862,24 @@ class _RegisterUserState extends State<RegisterUser> {
                           border: Border.all(color: Colors.black)),
                       child: const Center(child: Text("IMAGE AREA")),
                     ),
-                    const SizedBox(height: 10,),
-                    FloatingActionButton(
-                    //<-- SEE HERE
-                    backgroundColor: Colors.blue,//const Color.fromRGBO(209, 57, 13, 1),
-                    onPressed: () async {
-                     _getFrontCamera();
-                    },
-                    child: const Icon(
-                      Icons.camera,
-                      size: 45,
-                    ),
-                  ),
-              
+              const SizedBox(
+                height: 10,
+              ),
+              FloatingActionButton(
+                //<-- SEE HERE
+                backgroundColor:
+                    Colors.blue, //const Color.fromRGBO(209, 57, 13, 1),
+                onPressed: () async {
+                  _getFrontCamera();
+                },
+                child: const Icon(
+                  Icons.camera,
+                  size: 45,
+                ),
+              ),
               const SizedBox(
                 height: 15,
               ),
-              // Container(
-              //   height: 45,
-              //   width: double.infinity,
-              //   margin: const EdgeInsets.only(
-              //     left: 70,
-              //     right: 70,
-              //     bottom: 25,
-              //     top: 25,
-              //   ),
-              //   child:
-              // Container(
-              //   margin: const EdgeInsets.only(left: 40, right: 50),
-              //   child: Row(
-              //     children: [
-              //       ElevatedButton.icon(
-              //         icon: const Icon(Icons.app_registration_outlined),
-              //         style: ElevatedButton.styleFrom(
-              //           shape: RoundedRectangleBorder(
-              //             //side: const BorderSide(color: Colors.black),
-              //             borderRadius: BorderRadius.circular(10),
-              //           ),
-              //         ),
-              //         onPressed: () {
-              //           register(
-              //               _userController.text.toString(),
-              //               placeValue,
-              //               _emailController.text.toString(),
-              //               _passController.text.toString());
-              //           // print(_userController.text);
-              //           // print(placeValue);
-              //           // print(_emailController.text);
-              //           // print(_passController.text);
-              //           // print(_passControllerc.text);
-              //         },
-              //         // style: ElevatedButton.styleFrom(
-              //         //   backgroundColor: Color.fromRGBO(2, 123, 78, 10),
-              //         // ),
-              //         label: const Text(
-              //           'Register User',
-              //           style: TextStyle(
-              //             fontSize: 20,
-              //             //fontSize: MediaQuery.of(context).size.width * 0.06,
-              //             fontWeight: FontWeight.bold,
-              //           ),
-              //         ),
-              //         // child: const Text(
-              //         //   'Register User',
-              //         //   style: TextStyle(
-              //         //     fontSize: 20,
-              //         //     fontWeight: FontWeight.bold,
-              //         //   ),
-              //         // ),
-              //       ),
-              //       const SizedBox(
-              //         width: 10,
-              //       ),
-              //       RichText(
-              //         text: TextSpan(
-              //           text: "Back To Login",
-              //           style: const TextStyle(
-              //             fontSize: 15,
-              //             color: Color.fromRGBO(173, 27, 2, 10),
-              //           ),
-              //           recognizer: TapGestureRecognizer()
-              //             ..onTap = () {
-              //               Navigator.pushNamed(context, 'auth');
-              //             },
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-              // ),
               Container(
                 height: height / 10,
                 margin: EdgeInsets.only(
@@ -1091,7 +888,7 @@ class _RegisterUserState extends State<RegisterUser> {
                   top: height / 55,
                 ),
                 decoration: const BoxDecoration(
-                  color: Colors.blue,//Color.fromRGBO(209, 57, 13, 1),
+                  color: Colors.blue, //Color.fromRGBO(209, 57, 13, 1),
                   borderRadius: BorderRadius.all(
                     Radius.circular(20),
                   ),
@@ -1103,21 +900,17 @@ class _RegisterUserState extends State<RegisterUser> {
                       heroTag: "btn1",
                       backgroundColor: Colors.white,
                       onPressed: () {
-                       register(
+                        register(
                             _userController.text.toString(),
                             placeValue,
                             _emailController.text.toString(),
                             _passController.text.toString());
-                            // print(_userController.text);
-                        // print(placeValue);
-                        // print(_emailController.text);
-                        // print(_passController.text);
-                        // print(_passControllerc.text);
+                       
                       },
                       child: const Icon(
                         Icons.person_add_alt_1_sharp,
                         size: 25,
-                        color: Colors.blue,//Color.fromRGBO(209, 57, 13, 1),
+                        color: Colors.blue, //Color.fromRGBO(209, 57, 13, 1),
                       ),
                     ),
                     FloatingActionButton(
@@ -1129,7 +922,7 @@ class _RegisterUserState extends State<RegisterUser> {
                       child: const Icon(
                         Icons.arrow_back_sharp,
                         size: 25,
-                        color: Colors.blue,//Color.fromRGBO(209, 57, 13, 1),
+                        color: Colors.blue, //Color.fromRGBO(209, 57, 13, 1),
                       ),
                     ),
                   ],

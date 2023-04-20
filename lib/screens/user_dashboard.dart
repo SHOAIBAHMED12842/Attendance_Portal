@@ -1,29 +1,21 @@
 // ignore_for_file: unnecessary_null_comparison
 import 'dart:async';
 import 'dart:convert';
-import 'package:attendence_app_pwc/api/local_auth_api.dart';
-import 'package:attendence_app_pwc/notification_service.dart';
-
+import 'package:attendence_app_pwc/services/local_auth_api.dart';
+import 'package:attendence_app_pwc/services/notification_service.dart';
+import 'package:attendence_app_pwc/services/utils.dart';
 import 'globals.dart' as globals;
-//import 'dart:typed_data';
 import 'package:attendence_app_pwc/screens/auth_screen.dart';
 import 'package:attendence_app_pwc/screens/view_attendence.dart';
 import 'package:flutter/services.dart';
-//import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
-//import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart';
-//import 'package:analog_clock/analog_clock.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-//import 'package:internet_connection_checker/internet_connection_checker.dart';
-//import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'dart:io';
 
 class UserDashboard extends StatefulWidget {
@@ -38,11 +30,7 @@ class UserDashboard extends StatefulWidget {
 }
 
 class _UserDashboardState extends State<UserDashboard> {
-  //  static const SystemUiOverlayStyle overlayStyle = SystemUiOverlayStyle(
-  //     systemNavigationBarColor: Color.fromRGBO(209, 57, 13, 1),
-  //     systemNavigationBarIconBrightness: Brightness.light,
-  //     systemNavigationBarDividerColor: Colors.blue,
-  //   );
+  utilsservices snackbar = utilsservices();
   NotificationServices notificationServices = NotificationServices();
   bool isSwitched = false;
   var switchf = '0';
@@ -51,9 +39,6 @@ class _UserDashboardState extends State<UserDashboard> {
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
   File? imageFile;
   final _formKey1 = GlobalKey<FormState>();
-  GetStorage box = GetStorage();
-  // final StopWatchTimer _stopWatchTimer = StopWatchTimer(); // Create instance.
-  //String time = DateFormat("hh:mm:ss a").format(DateTime.now());
   String time = '';
   String time1 = '';
   String time3 = '';
@@ -119,17 +104,7 @@ class _UserDashboardState extends State<UserDashboard> {
         await prefinger.setString('username', username);
         _getAttendenceData();
       } else {
-        Fluttertoast.showToast(
-          //msg: response.statusCode.toString() + response.body,
-          msg: "Server Error Found/Failed to Show Categories",
-          //toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 5,
-          //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-          backgroundColor: Colors.black,
-          textColor: Colors.white,
-          fontSize: 16,
-        );
+        snackbar.showsnackbar("Server Error Found/Failed to Show Categories");
       }
     } catch (e) {}
   }
@@ -140,16 +115,7 @@ class _UserDashboardState extends State<UserDashboard> {
 
   // The function that fetches data from the API
   Future<void> _getAttendenceData() async {
-    Fluttertoast.showToast(
-      msg: "Looking for previous attendence Kindly wait!",
-      //toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.BOTTOM,
-      timeInSecForIosWeb: 5,
-      //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-      backgroundColor: Colors.black,
-      textColor: Colors.white,
-      fontSize: 16,
-    );
+    snackbar.showsnackbar("Looking for previous attendence Kindly wait!");
     try {
       //List<String> client_categories = [];
       Response response = await get(
@@ -160,8 +126,7 @@ class _UserDashboardState extends State<UserDashboard> {
           'Authorization': 'Bearer ${token}'
         },
       ).timeout(const Duration(seconds: 50));
-      print('view');
-      print(response.statusCode);
+
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body.toString());
         _loadedattendence = data;
@@ -173,9 +138,6 @@ class _UserDashboardState extends State<UserDashboard> {
           });
           if ((_lastattendence["attendanceType"] == "CHECK-IN" ||
               _lastattendence["attendanceType"] == "i")) {
-            print('user check in');
-            print(_lastattendence["client"]["fldID"]);
-            print(_lastattendence["attendanceType"]);
             time24 =
                 _lastattendence["attendanceTime"].toString().substring(11, 16);
             parsedTime = DateFormat('HH:mm').parse(time24!);
@@ -193,41 +155,17 @@ class _UserDashboardState extends State<UserDashboard> {
                   .substring(11, 19);
               attendencedate = DateFormat('dd-MMMM-yyyy').format(dateTime);
             });
-            // print(time3);
-            // print(clientid);
             SharedPreferences prefinger = await SharedPreferences.getInstance();
             await prefinger.setString('CI', '1');
             notificationServices.cancelnotification();
             notificationServices.schedulecheckoutinnotification(
                 "Check-out Alert!",
                 "Respected $username kindly mark the check-out.");
-            Fluttertoast.showToast(
-              msg: "Last Check-in at ${_lastattendence["client"]["fldName"]}",
-              //toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              timeInSecForIosWeb: 5,
-              //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-              backgroundColor: Colors.black,
-              textColor: Colors.white,
-              fontSize: 16,
-            );
+            snackbar.showsnackbar(
+                "Last Check-in at ${_lastattendence["client"]["fldName"]}");
             check_two_times_is_before();
             _timerstart();
-            // Fluttertoast.showToast(
-            //   //msg: response.statusCode.toString() + response.body,
-            //   msg: "Clients is ready to show!",
-            //   //toastLength: Toast.LENGTH_SHORT,
-            //   gravity: ToastGravity.BOTTOM,
-            //   timeInSecForIosWeb: 5,
-            //   //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-            //   backgroundColor: Colors.black,
-            //   textColor: Colors.white,
-            //   fontSize: 16,
-            // );
           } else {
-            print('user checkout');
-            print(_lastattendence["client"]["fldID"]);
-            print(_lastattendence["attendanceType"]);
             setState(() {
               value = '0';
               _ischeckin = false;
@@ -242,28 +180,8 @@ class _UserDashboardState extends State<UserDashboard> {
             notificationServices.cancelnotification();
             notificationServices.schedulecheckinnotification("Check-in Alert!",
                 "Respected $username kindly mark the check-in.");
-            Fluttertoast.showToast(
-              msg:
-                  "Last Check-out at ${_lastattendence["client"]["fldName"]} now you can select client",
-              //toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              timeInSecForIosWeb: 5,
-              //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-              backgroundColor: Colors.black,
-              textColor: Colors.white,
-              fontSize: 16,
-            );
-            // Fluttertoast.showToast(
-            //   //msg: response.statusCode.toString() + response.body,
-            //   msg: "Clients is ready to show!",
-            //   //toastLength: Toast.LENGTH_SHORT,
-            //   gravity: ToastGravity.BOTTOM,
-            //   timeInSecForIosWeb: 5,
-            //   //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-            //   backgroundColor: Colors.black,
-            //   textColor: Colors.white,
-            //   fontSize: 16,
-            // );
+            snackbar.showsnackbar(
+                "Last Check-out at ${_lastattendence["client"]["fldName"]} now you can select client");
           }
         } else {
           setState(() {
@@ -276,18 +194,9 @@ class _UserDashboardState extends State<UserDashboard> {
             attendencedate = "";
           });
           SharedPreferences prefinger = await SharedPreferences.getInstance();
-            await prefinger.setString('CI', '3');
+          await prefinger.setString('CI', '3');
           notificationServices.newusernotification();
-          Fluttertoast.showToast(
-            msg: "$username is a new user",
-            //toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            timeInSecForIosWeb: 5,
-            //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-            backgroundColor: Colors.black,
-            textColor: Colors.white,
-            fontSize: 16,
-          );
+          snackbar.showsnackbar("$username is a new user");
         }
       }
     } catch (e) {
@@ -305,10 +214,7 @@ class _UserDashboardState extends State<UserDashboard> {
         setState(() {
           isSwitched = false;
         });
-        SharedPreferences prefinger = await SharedPreferences.getInstance();
-        await prefinger.remove("email12");
-        await prefinger.remove("SHA12");
-        await prefinger.remove("sval12");
+      snackbar.removeharepreferenes();
       } else {
         //print('fingerprint enable');
         setState(() {
@@ -341,18 +247,7 @@ class _UserDashboardState extends State<UserDashboard> {
           switchf = '0';
         });
       }
-
-      Fluttertoast.showToast(
-        msg: "Finger Print Login Enable Successfully",
-        //toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 5,
-        //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16,
-      );
-      print('Switch Button is ON');
+      snackbar.showsnackbar("Finger Print Login Enable Successfully");
     } else {
       setState(() {
         isSwitched = false;
@@ -362,21 +257,8 @@ class _UserDashboardState extends State<UserDashboard> {
       String? val1 = prefinger.getString("email12");
       String? val2 = prefinger.getString("SHA12");
       String? val3 = prefinger.getString("sval12");
-      await prefinger.remove("email12");
-      await prefinger.remove("SHA12");
-      await prefinger.remove("sval12");
-
-      Fluttertoast.showToast(
-        msg: "Finger Print Login Disable Successfully",
-        //toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 5,
-        //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16,
-      );
-      print('Switch Button is OFF');
+      snackbar.removeharepreferenes();
+      snackbar.showsnackbar("Finger Print Login Disable Successfully");
     }
   }
 
@@ -486,7 +368,6 @@ class _UserDashboardState extends State<UserDashboard> {
     //await _stopWatchTimer.dispose(); // Need to call dispose function.
   }
 
-  void getindex(String items) {}
   void check_two_times_is_before() {
     print("success time");
     String systime = DateFormat("HH:mm:ss").format(DateTime.now());
@@ -512,17 +393,8 @@ class _UserDashboardState extends State<UserDashboard> {
       setState(() {
         _isnegative = true;
       });
-      Fluttertoast.showToast(
-        msg:
-            "Your Check-in is 1 or more days earlier.Kindly tap to check-out immediately!",
-        //toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 5,
-        //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16,
-      );
+      snackbar.showsnackbar(
+          "Your Check-in is 1 or more days earlier.Kindly tap to check-out immediately!");
     } else {
       setState(() {
         _isnegative = false;
@@ -597,20 +469,8 @@ class _UserDashboardState extends State<UserDashboard> {
               _ischeckin = true;
             });
 
-            var data = jsonDecode(response.body.toString());
-            // print(data);
-            // print('success');
+            snackbar.showsnackbar("$username Check-in at $time");
 
-            Fluttertoast.showToast(
-              msg: "$username Check-in at $time",
-              //toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              timeInSecForIosWeb: 3,
-              //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-              backgroundColor: Colors.black,
-              textColor: Colors.white,
-              fontSize: 16,
-            );
             setState(() {
               _ischeckin = true;
             });
@@ -621,41 +481,19 @@ class _UserDashboardState extends State<UserDashboard> {
               ),
             );
           } else {
-            Fluttertoast.showToast(
-              msg: "Server Error Found/Select a client",
-              //toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              timeInSecForIosWeb: 5,
-              //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-              backgroundColor: Colors.black,
-              textColor: Colors.white,
-              fontSize: 16,
-            );
-            //print('failed');
+            snackbar.showsnackbar("Server Error Found/Select a client");
           }
         } catch (e) {
-          print(e.toString());
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => UserDashboard(token, SHA1, email, userid),
             ),
           );
-          Fluttertoast.showToast(
-            msg:
-                "Internet is not working/Please enable the Location services then TAP Live Location",
-            //toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            timeInSecForIosWeb: 5,
-            //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-            backgroundColor: Colors.black,
-            textColor: Colors.white,
-            fontSize: 16,
-          );
-          //print(e.toString());
+          snackbar.showsnackbar(
+              "Internet is not working/Please enable the Location services then TAP Live Location");
         }
       } catch (e) {
-        print("error messege${e.toString()}");
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -708,17 +546,8 @@ class _UserDashboardState extends State<UserDashboard> {
               time1 = DateFormat("hh:mm a").format(DateTime.now());
             });
             var data = jsonDecode(response.body.toString());
+            snackbar.showsnackbar("$username Check-out at $time1");
 
-            Fluttertoast.showToast(
-              msg: "$username Check-out at $time1",
-              //toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              timeInSecForIosWeb: 3,
-              //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-              backgroundColor: Colors.black,
-              textColor: Colors.white,
-              fontSize: 16,
-            );
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -726,18 +555,7 @@ class _UserDashboardState extends State<UserDashboard> {
               ),
             );
           } else {
-            //print("Soaub ${response.body}");
-            Fluttertoast.showToast(
-              msg: "Server Error Found",
-              //toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              timeInSecForIosWeb: 5,
-              //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-              backgroundColor: Colors.black,
-              textColor: Colors.white,
-              fontSize: 16,
-            );
-            //print('failed');
+            snackbar.showsnackbar("Server Error Found");
           }
         } catch (e) {
           print(e.toString());
@@ -747,18 +565,8 @@ class _UserDashboardState extends State<UserDashboard> {
               builder: (context) => UserDashboard(token, SHA1, email, userid),
             ),
           );
-          Fluttertoast.showToast(
-            msg:
-                "Internet is not working/Please enable the Location services then TAP Live Location",
-            //toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            timeInSecForIosWeb: 5,
-            //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-            backgroundColor: Colors.black,
-            textColor: Colors.white,
-            fontSize: 16,
-          );
-          //print(e.toString());
+          snackbar.showsnackbar(
+              "Internet is not working/Please enable the Location services then TAP Live Location");
         }
       } catch (e) {
         Navigator.pushReplacement(
@@ -813,18 +621,8 @@ class _UserDashboardState extends State<UserDashboard> {
               ),
             );
           } else {
-            Fluttertoast.showToast(
-              //msg: response.statusCode.toString() + response.body,
-              msg: "Server Error Found/Failed to Show Categories",
-              //toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              timeInSecForIosWeb: 5,
-              //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-              backgroundColor: Colors.black,
-              textColor: Colors.white,
-              fontSize: 16,
-            );
-            //print('failed');
+            snackbar
+                .showsnackbar("Server Error Found/Failed to Show Categories");
           }
         } catch (e) {
           print(e.toString());
@@ -877,9 +675,6 @@ class _UserDashboardState extends State<UserDashboard> {
         email = pref.getString("email")!;
         userid = pref.getString("id")!;
       });
-      print(email);
-      print('pre token: $token');
-      print("id: $userid");
     } else {
       setState(() {
         token = pref1.getString("login")!;
@@ -890,10 +685,6 @@ class _UserDashboardState extends State<UserDashboard> {
       });
       await pref.setString('login', token);
       getAllCategory();
-      print('new token: $token');
-      print("id: $userid");
-      // print('SHA1: $SHA1');
-      // print('email: $email');
     }
   }
 
@@ -903,49 +694,22 @@ class _UserDashboardState extends State<UserDashboard> {
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      //     content: Text('Location services are disabled. Please enable the services')));
-      Fluttertoast.showToast(
-        msg: "Location services are disabled. Please enable the services",
-        //toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 3,
-        //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16,
-      );
+      snackbar.showsnackbar(
+          "Location services are disabled. Please enable the services");
+
       return false;
     }
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        Fluttertoast.showToast(
-          msg: "Location permissions are denied",
-          //toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 3,
-          //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-          backgroundColor: Colors.black,
-          textColor: Colors.white,
-          fontSize: 16,
-        );
+        snackbar.showsnackbar("Location permissions are denied");
         return false;
       }
     }
     if (permission == LocationPermission.deniedForever) {
-      Fluttertoast.showToast(
-        msg:
-            "Location permissions are permanently denied, we cannot request permissions.",
-        //toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 3,
-        //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16,
-      );
+      snackbar.showsnackbar(
+          "Location permissions are permanently denied, we cannot request permissions.");
       return false;
     }
     return true;
@@ -968,8 +732,6 @@ class _UserDashboardState extends State<UserDashboard> {
     }).catchError((e) {
       //debugPrint(e);
     });
-    // print('LAT: ${_currentPosition?.latitude}');
-    // print('LNG: ${_currentPosition?.longitude}');
   }
 
   Future<void> getAddressFromLatLng(double lat, double lng) async {
@@ -988,30 +750,11 @@ class _UserDashboardState extends State<UserDashboard> {
           //print("response ==== $_currentAddress");
           //return _formattedAddress;
         } else {
-          Fluttertoast.showToast(
-            msg: "Server Error Found",
-            //toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            timeInSecForIosWeb: 15,
-            //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-            backgroundColor: Colors.black,
-            textColor: Colors.white,
-            fontSize: 16,
-          );
-          //_currentAddress='';
+          snackbar.showsnackbar("Server Error Found");
         }
       } catch (e) {}
     } else {
-      Fluttertoast.showToast(
-        msg: "Successfully Getting Location Address",
-        //toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 15,
-        //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16,
-      );
+      snackbar.showsnackbar("Successfully Getting Location Address");
     }
   }
 
@@ -1059,16 +802,7 @@ class _UserDashboardState extends State<UserDashboard> {
   }
 
   void logout() async {
-    Fluttertoast.showToast(
-      msg: "$username Logout Attendance Portal",
-      //toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.BOTTOM,
-      timeInSecForIosWeb: 3,
-      //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-      backgroundColor: Colors.black,
-      textColor: Colors.white,
-      fontSize: 16,
-    );
+    snackbar.showsnackbar("$username Logout Attendance Portal");
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(

@@ -1,15 +1,13 @@
 import 'dart:async';
 import 'package:attendence_app_pwc/screens/user_dashboard.dart';
+import 'package:attendence_app_pwc/services/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart';
 import 'dart:convert';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'globals.dart' as globals;
-//import 'package:google_fonts/google_fonts.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-//import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 class ViewAttendence extends StatefulWidget {
   //const ViewAttendence({super.key});
@@ -26,6 +24,7 @@ class ViewAttendence extends StatefulWidget {
 }
 
 class _ViewAttendenceState extends State<ViewAttendence> {
+  utilsservices snackbar = utilsservices();
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
   String newtoken = "";
@@ -48,9 +47,6 @@ class _ViewAttendenceState extends State<ViewAttendence> {
     newSHA1 = widget.SHA1;
     newemail = widget.email;
     newusername = widget.username;
-    print(newusername);
-    print("token: $newtoken   userid: $newuserid");
-    //_getAttendenceData();
     initConnectivity();
     _connectivitySubscription =
         _connectivity.onConnectivityChanged.listen(_UpdateConnectionState);
@@ -124,13 +120,10 @@ class _ViewAttendenceState extends State<ViewAttendence> {
         });
       }
     }
-    print("TOTAL CHECK-IN : $totalcheckin");
-    print("TOTAL CHECK-out : $totalcheckout");
   }
 
   // The list that contains information about attendence
   List _loadedattendence = [];
-  List _lastattendence = [];
   var _isempty = false;
   // The function that fetches data from the API
   Future<void> _getAttendenceData() async {
@@ -158,32 +151,12 @@ class _ViewAttendenceState extends State<ViewAttendence> {
           setState(() {
             _isempty = false;
           });
-          Fluttertoast.showToast(
-            //msg: response.statusCode.toString() + response.body,
-            msg: "Attendence Details is ready to show!",
-            //toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            timeInSecForIosWeb: 5,
-            //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-            backgroundColor: Colors.black,
-            textColor: Colors.white,
-            fontSize: 16,
-          );
+          snackbar.showsnackbar("Attendence Details is show successfully!");
         } else {
           setState(() {
             _isempty = true;
           });
-          Fluttertoast.showToast(
-            //msg: response.statusCode.toString() + response.body,
-            msg: "No data found",
-            //toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            timeInSecForIosWeb: 5,
-            //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-            backgroundColor: Colors.black,
-            textColor: Colors.white,
-            fontSize: 16,
-          );
+          snackbar.showsnackbar("No data found");
         }
       } else {
         try {
@@ -208,47 +181,15 @@ class _ViewAttendenceState extends State<ViewAttendence> {
               ),
             );
           } else {
-            //print("Soaub ${response.body}");
-            Fluttertoast.showToast(
-              //msg: response.statusCode.toString() + response.body,
-              msg: "Server Error Found/Failed to Load Attendence data",
-              //toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              timeInSecForIosWeb: 5,
-              //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-              backgroundColor: Colors.black,
-              textColor: Colors.white,
-              fontSize: 16,
-            );
-            //print('failed');
+            snackbar.showsnackbar("Server Error Found/Failed to Load Attendence data");
           }
         } catch (e) {
           print(e.toString());
-          // Fluttertoast.showToast(
-          //   msg: "Internet is not working Kindly Connect it",
-          //   //toastLength: Toast.LENGTH_SHORT,
-          //   gravity: ToastGravity.BOTTOM,
-          //   timeInSecForIosWeb: 5,
-          //   //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-          //   backgroundColor: Colors.black,
-          //   textColor: Colors.white,
-          //   fontSize: 16,
-          // );
         }
       }
     } catch (e) {
       print(e.toString());
-      // Fluttertoast.showToast(
-      //   msg: "Internet is not working Kindly Connect it",
-      //   //toastLength: Toast.LENGTH_SHORT,
-      //   gravity: ToastGravity.BOTTOM,
-      //   timeInSecForIosWeb: 5,
-      //   //backgroundColor: const Color.fromRGBO(232, 141, 20, 1),
-      //   backgroundColor: Colors.black,
-      //   textColor: Colors.white,
-      //   fontSize: 16,
-      // );
-      //print(e.toString());
+      
     }
   }
 
@@ -370,20 +311,7 @@ class _ViewAttendenceState extends State<ViewAttendence> {
                   ],
                 ),
               ),
-              // Text("token: $newtoken"),
-              // Text("userid: $newuserid"),
-              //  Text("SHA1: $newSHA1"),
-              // Text("EMAIL: $newemail"),
-              // Container(
-              //   margin: const EdgeInsets.only(left: 90, right: 90),
-              //   color: const Color.fromRGBO(216, 86, 4, 1),
-              //   child: Center(
-              //     child: Text(
-              //       "Total Attendence Data  >>  ${_loadedattendence.length}",
-              //       style: const TextStyle(color: Colors.white),
-              //     ),
-              //   ),
-              // ),
+              
               _loadedattendence.isEmpty
                   ? Column(
                       children: [
@@ -523,36 +451,7 @@ class _ViewAttendenceState extends State<ViewAttendence> {
                               padding:
                                   const EdgeInsets.only(top: 8.0, bottom: 8),
                               child: Container(
-                                // decoration: BoxDecoration(
-                                //   border: Border.all(
-                                //     color: (_loadedattendence[index]
-                                //                   ["attendanceType"] ==
-                                //               "CHECK-OUT" ||
-                                //           _loadedattendence[index]
-                                //                   ["attendanceType"] ==
-                                //               "o")
-                                //       ? Colors.red
-                                //       : (_loadedattendence[index]
-                                //                       ["attendanceType"] ==
-                                //                   "CHECK-IN" ||
-                                //               _loadedattendence[index]
-                                //                       ["attendanceType"] ==
-                                //                   "i")
-                                //           ? Colors.green
-                                //           : Colors.black,
-                                //   ),
-                                // ),
-
-                                // decoration: const ShapeDecoration(
-                                //   shape: RoundedRectangleBorder(
-                                //     side: BorderSide(
-                                //       color: Colors.black,
-                                //        //style: BorderStyle.solid
-                                //        ),
-                                //     borderRadius:
-                                //         BorderRadius.all(Radius.circular(10.0)),
-                                //   ),
-                                // ),
+                               
                                 margin:
                                     const EdgeInsets.only(left: 20, right: 20),
                                 child: Card(
