@@ -112,6 +112,7 @@ class _UserDashboardState extends State<UserDashboard> {
   List _loadedattendence = [];
   var _lastattendence;
   var _isattendenceloading = false;
+  var clientname;
 
   // The function that fetches data from the API
   Future<void> _getAttendenceData() async {
@@ -130,9 +131,9 @@ class _UserDashboardState extends State<UserDashboard> {
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body.toString());
         _loadedattendence = data;
-        print(_loadedattendence);
+        // print(_loadedattendence);
         if (_loadedattendence.isNotEmpty) {
-          print(_loadedattendence);
+          //print(_loadedattendence);
           setState(() {
             _lastattendence = _loadedattendence[_loadedattendence.length - 1];
           });
@@ -154,13 +155,20 @@ class _UserDashboardState extends State<UserDashboard> {
                   .toString()
                   .substring(11, 19);
               attendencedate = DateFormat('dd-MMMM-yyyy').format(dateTime);
+              clientname = _lastattendence["client"]["fldName"];
             });
             SharedPreferences prefinger = await SharedPreferences.getInstance();
             await prefinger.setString('CI', '1');
+            await prefinger.setString('clientname', clientname);
+            await prefinger.setString('time', time12!);
+            //notificationServices.cancelnotification();
             notificationServices.cancelnotification();
             notificationServices.schedulecheckoutinnotification(
                 "Check-out Alert!",
-                "Respected $username kindly mark the check-out.");
+                "Respected $username kindly mark the check-out.",clientname,time12!);
+            notificationServices.sendNotification(
+                'Last Check-in $clientname at $time12',
+                "Kindly mark check-out before 11PM");
             snackbar.showsnackbar(
                 "Last Check-in at ${_lastattendence["client"]["fldName"]}");
             check_two_times_is_before();
@@ -174,12 +182,18 @@ class _UserDashboardState extends State<UserDashboard> {
               //lastcheckintime="";
               time12 = "";
               attendencedate = "";
+              clientname = _lastattendence["client"]["fldName"];
             });
             SharedPreferences prefinger = await SharedPreferences.getInstance();
             await prefinger.setString('CI', '2');
+            await prefinger.setString('clientname', clientname);
+            //notificationServices.cancelnotification();
+
             notificationServices.cancelnotification();
             notificationServices.schedulecheckinnotification("Check-in Alert!",
-                "Respected $username kindly mark the check-in.");
+                "Respected $username kindly mark the check-in.",clientname);
+            notificationServices.sendNotification('Last Check-out $clientname',
+                "Kindly mark check-in before 11AM");
             snackbar.showsnackbar(
                 "Last Check-out at ${_lastattendence["client"]["fldName"]} now you can select client");
           }
@@ -195,8 +209,10 @@ class _UserDashboardState extends State<UserDashboard> {
           });
           SharedPreferences prefinger = await SharedPreferences.getInstance();
           await prefinger.setString('CI', '3');
-          notificationServices.newusernotification();
+          notificationServices.newusernotification(username);
           snackbar.showsnackbar("$username is a new user");
+           notificationServices.sendNotification('$username Check-in required!',
+              'Kindly mark check-in for the first time.');
         }
       }
     } catch (e) {
@@ -214,7 +230,7 @@ class _UserDashboardState extends State<UserDashboard> {
         setState(() {
           isSwitched = false;
         });
-      snackbar.removeharepreferenes();
+        snackbar.removeharepreferenes();
       } else {
         //print('fingerprint enable');
         setState(() {
@@ -470,10 +486,14 @@ class _UserDashboardState extends State<UserDashboard> {
             });
 
             snackbar.showsnackbar("$username Check-in at $time");
-
+            notificationServices.cancelnotification();
+            notificationServices.sendNotification(
+                '$username Check-in $clientname at $time',
+                "Kindly mark check-out before 11PM");
             setState(() {
               _ischeckin = true;
             });
+
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -547,7 +567,10 @@ class _UserDashboardState extends State<UserDashboard> {
             });
             var data = jsonDecode(response.body.toString());
             snackbar.showsnackbar("$username Check-out at $time1");
-
+            notificationServices.cancelnotification();
+            notificationServices.sendNotification(
+                '$username Check-out $clientname at $time1',
+                "Kindly mark check-in before 11AM");
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
