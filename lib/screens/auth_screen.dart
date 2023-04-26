@@ -11,6 +11,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+//import 'package:dio/dio.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
@@ -145,7 +146,6 @@ class _Auth_ScreenState extends State<Auth_Screen> {
     super.dispose();
   }
 
-
   void login(String email, String password) async {
     final isValid1 = _formKey1.currentState!.validate();
     final isValid2 = _formKey2.currentState!.validate();
@@ -159,7 +159,13 @@ class _Auth_ScreenState extends State<Auth_Screen> {
       try {
         var SHA1Password = utf8.encode(password);
         var sha1Result = sha1.convert(SHA1Password);
-
+        // final dio = Dio();
+        // Response response = await dio.post('${globals.apiurl}token',
+        //     data: {'email': email, 'password': sha1Result.toString()},
+        //     options: Options(headers: {
+        //       "Accept": "application/json",
+        //       "content-type": "application/json"
+        //     })).timeout(const Duration(seconds: 25));
         Response response = await post(Uri.parse('${globals.apiurl}token'),
             headers: {
               "Accept": "application/json",
@@ -169,19 +175,26 @@ class _Auth_ScreenState extends State<Auth_Screen> {
               'email': email, //eve.holt@reqres.in
               'password': sha1Result.toString() //pistol
             })).timeout(const Duration(seconds: 25));
-
+       // print("respons: ${response.statusCode}");
         if (response.statusCode == 200) {
           setState(() {
             islogin = true;
           });
           var data = jsonDecode(response.body.toString());
+          //var data = jsonDecode(response.data.toString());
           pageRoute(data['password'], data['email'], data['displayName'],
               sha1Result.toString(), data['userId'].toString());
         } else {
           snackbar.showsnackbar(
               "Either Server Error Found or Enter Wrong Credentials");
+              setState(() {
+                isLoading=false;
+              });
         }
       } catch (e) {
+        setState(() {
+                isLoading=false;
+              });
         snackbar.showsnackbar("Internet is not working");
       }
     }
@@ -194,6 +207,13 @@ class _Auth_ScreenState extends State<Auth_Screen> {
     print(email);
     print(SHA);
     try {
+      //  final dio = Dio();
+      //   Response response = await dio.post('${globals.apiurl}token',
+      //       data: {'email': email, 'password': SHA.toString()},
+      //       options: Options(headers: {
+      //         "Accept": "application/json",
+      //         "content-type": "application/json"
+      //       })).timeout(const Duration(seconds: 25));
       Response response = await post(Uri.parse('${globals.apiurl}token'),
           headers: {
             "Accept": "application/json",
@@ -209,13 +229,20 @@ class _Auth_ScreenState extends State<Auth_Screen> {
           islogin = true;
         });
         var data = jsonDecode(response.body.toString());
+        //var data = jsonDecode(response.data.toString());
         pageRoute(data['password'], data['email'], data['displayName'], SHA,
             data['userId'].toString());
       } else {
+        setState(() {
+          isLoadingf=false;
+        });
         snackbar.showsnackbar(
             "Either Server Error Found or Enter Wrong Credentials");
       }
     } catch (e) {
+      setState(() {
+        isLoadingf=false;
+      });
       snackbar.showsnackbar("Internet is not working");
     }
   }
