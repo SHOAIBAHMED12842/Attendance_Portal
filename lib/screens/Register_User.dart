@@ -250,7 +250,7 @@ class _RegisterUserState extends State<RegisterUser> {
       if (imageFile != null) {
         try {
           var SHA1Password = utf8.encode(password1);
-          Digest sha1Result = sha1.convert(SHA1Password);
+          Digest sha1Result = sha256.convert(SHA1Password);
           print('SHA1: $sha1Result');
           Response response = await post(
               Uri.parse('${globals.apiurl}user'),

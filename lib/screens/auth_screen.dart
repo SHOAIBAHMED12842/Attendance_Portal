@@ -161,7 +161,7 @@ class _Auth_ScreenState extends State<Auth_Screen> {
       try {
         //print('here');
         var SHA1Password = utf8.encode(password);
-        var sha1Result = sha1.convert(SHA1Password);
+        var sha1Result = sha256.convert(SHA1Password);
         Response response = await post(Uri.parse('${globals.apiurl}token'),
             headers: {
               "Accept": "application/json",
@@ -189,6 +189,7 @@ class _Auth_ScreenState extends State<Auth_Screen> {
         //       ),
         //     )
         //     .timeout(const Duration(seconds: 25));
+        print("response code : ${response.statusCode.toString()}");
         if (response.statusCode == 200) {
           setState(() {
             islogin = true;
