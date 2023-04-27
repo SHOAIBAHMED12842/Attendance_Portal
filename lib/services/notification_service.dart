@@ -127,8 +127,17 @@ class NotificationServices {
       notificationDetails,
     );
   }
-
-  void schedulecheckinnotification(String title, String body,String clientname) async {
+void schedulecheckinnotification1(String title, String body, String clientname){
+  var now = DateTime.now();
+     if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
+    // Cancel all scheduled notifications
+    cancelnotification();
+  } else {
+  schedulecheckinnotification(title,body,clientname);
+  }
+}
+  void schedulecheckinnotification(
+      String title, String body, String clientname) async {
     print('inside check-in function');
     //await _flutterLocalNotificationsPlugin.cancel(1);
     AndroidNotificationDetails _androidNotificationDetails =
@@ -150,7 +159,8 @@ class NotificationServices {
     var now = DateTime.now();
     var scheduledTime = DateTime(
         now.year, now.month, now.day, time.hour, time.minute, time.second);
-    if (scheduledTime.isBefore(now)) {
+    if (scheduledTime.isBefore(now) || scheduledTime.weekday == DateTime.saturday ||
+        scheduledTime.weekday == DateTime.sunday) {
       scheduledTime = scheduledTime.add(const Duration(days: 1));
     }
 
@@ -163,11 +173,20 @@ class NotificationServices {
       time,
       notificationDetails,
     );
-    sendNotification('Last Check-out $clientname',
-                "Kindly mark check-in before 11AM");
+    sendNotification(
+        'Last Check-out $clientname', "Kindly mark check-in before 11AM");
   }
-
-  void schedulecheckoutinnotification(String title, String body,String clientname, String time12) async {
+void schedulecheckoutinnotification1(String title, String body, String clientname, String time12){
+  var now = DateTime.now();
+     if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
+    // Cancel all scheduled notifications
+    cancelnotification();
+  } else {
+  schedulecheckoutinnotification(title,body,clientname,time12);
+  }
+}
+  void schedulecheckoutinnotification(
+      String title, String body, String clientname, String time12) async {
     print('inside check-out function');
     // await _flutterLocalNotificationsPlugin.cancel(0);
     AndroidNotificationDetails _androidNotificationDetails =
@@ -189,7 +208,8 @@ class NotificationServices {
     var now = DateTime.now();
     var scheduledTime = DateTime(
         now.year, now.month, now.day, time.hour, time.minute, time.second);
-    if (scheduledTime.isBefore(now)) {
+    if (scheduledTime.isBefore(now) || scheduledTime.weekday == DateTime.saturday ||
+        scheduledTime.weekday == DateTime.sunday) {
       scheduledTime = scheduledTime.add(const Duration(days: 1));
     }
 
@@ -202,8 +222,8 @@ class NotificationServices {
       time,
       notificationDetails,
     );
-     sendNotification('Last Check-in $clientname at $time12',
-                "Kindly mark check-out before 11PM");
+    sendNotification('Last Check-in $clientname at $time12',
+        "Kindly mark check-out before 11PM");
   }
 
   void cancelnotification() async {
@@ -221,10 +241,16 @@ class NotificationServices {
 //   schedulecheckoutinnotification("Check-out Alert!", "Kindly mark check-out (ignore if done)");
 // }
   void bothNotification() {
-    scheduleboth1notification('Check-in/Check-out Alert!',
-        'Kindly mark either check-in or check-out.');
-    scheduleboth2notification('Check-in/Check-out Alert!',
-        'Kindly mark either check-in or check-out.');
+    var now = DateTime.now();
+    if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
+      // Cancel all scheduled notifications
+      cancelnotification();
+    } else {
+      scheduleboth1notification('Check-in/Check-out Alert!',
+          'Kindly mark either check-in or check-out.');
+      scheduleboth2notification('Check-in/Check-out Alert!',
+          'Kindly mark either check-in or check-out.');
+    }
   }
 
   void scheduleboth1notification(String title, String body) async {
@@ -247,12 +273,13 @@ class NotificationServices {
 
     // Check if the time has already passed for today
     var now = DateTime.now();
+
     var scheduledTime = DateTime(
         now.year, now.month, now.day, time.hour, time.minute, time.second);
-    if (scheduledTime.isBefore(now)) {
+    if (scheduledTime.isBefore(now) || scheduledTime.weekday == DateTime.saturday ||
+        scheduledTime.weekday == DateTime.sunday) {
       scheduledTime = scheduledTime.add(const Duration(days: 1));
     }
-
     // Schedule the notification to show at 11 AM every day
     // ignore: deprecated_member_use
     await _flutterLocalNotificationsPlugin.showDailyAtTime(
@@ -286,7 +313,8 @@ class NotificationServices {
     var now = DateTime.now();
     var scheduledTime = DateTime(
         now.year, now.month, now.day, time.hour, time.minute, time.second);
-    if (scheduledTime.isBefore(now)) {
+    if (scheduledTime.isBefore(now) || scheduledTime.weekday == DateTime.saturday ||
+        scheduledTime.weekday == DateTime.sunday) {
       scheduledTime = scheduledTime.add(const Duration(days: 1));
     }
 
@@ -302,13 +330,19 @@ class NotificationServices {
   }
 
   void newusernotification(String username) {
+    var now = DateTime.now();
+     if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
+    // Cancel all scheduled notifications
+    cancelnotification();
+  } else {
     cancelnotification();
     sendNotification('Newuser Check-in required!',
         'Kindly mark check-in for the first time.');
-    schedulenewuser1notification('Newuser Check-in Alert!',
-        'Kindly mark check-in for the first time.');
-    schedulenewuser2notification('$username Check-inAlert!',
-        'Kindly mark check-in for the first time.');
+    schedulenewuser1notification(
+        'Newuser Check-in Alert!', 'Kindly mark check-in for the first time.');
+    schedulenewuser2notification(
+        '$username Check-inAlert!', 'Kindly mark check-in for the first time.');
+  }
   }
 
   void schedulenewuser1notification(String title, String body) async {
@@ -333,7 +367,8 @@ class NotificationServices {
     var now = DateTime.now();
     var scheduledTime = DateTime(
         now.year, now.month, now.day, time.hour, time.minute, time.second);
-    if (scheduledTime.isBefore(now)) {
+    if (scheduledTime.isBefore(now) || scheduledTime.weekday == DateTime.saturday ||
+        scheduledTime.weekday == DateTime.sunday) {
       scheduledTime = scheduledTime.add(const Duration(days: 1));
     }
 
@@ -370,7 +405,8 @@ class NotificationServices {
     var now = DateTime.now();
     var scheduledTime = DateTime(
         now.year, now.month, now.day, time.hour, time.minute, time.second);
-    if (scheduledTime.isBefore(now)) {
+    if (scheduledTime.isBefore(now) || scheduledTime.weekday == DateTime.saturday ||
+        scheduledTime.weekday == DateTime.sunday) {
       scheduledTime = scheduledTime.add(const Duration(days: 1));
     }
 

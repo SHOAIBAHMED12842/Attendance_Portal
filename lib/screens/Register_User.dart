@@ -13,6 +13,8 @@ import 'dart:async';
 //import 'package:convert/convert.dart';
 import 'dart:convert';
 import 'package:http/http.dart';
+//import 'package:dio/dio.dart';
+//import 'package:axios/axios.dart';
 
 class RegisterUser extends StatefulWidget {
   const RegisterUser({super.key});
@@ -128,10 +130,20 @@ class _RegisterUserState extends State<RegisterUser> {
           "content-type": "application/json",
         },
       ).timeout(const Duration(seconds: 50));
+//       Response response = await Dio().get(
+//   '${globals.apiurl}user',
+//   options: Options(headers: {
+//     "Accept": "application/json",
+//     "content-type": "application/json",
+//   }),
+// ).timeout(Duration(seconds: 50));
+
       if (response.statusCode == 200) {
         // print("success");
         // print(response.body.toString());
         var data = jsonDecode(response.body.toString());
+        //var data = jsonDecode(response.data);
+        // print("DATA: $data");
         for (var element in data) {
           _loadedusername.add(element['displayName']);
         }
@@ -153,10 +165,20 @@ class _RegisterUserState extends State<RegisterUser> {
           "content-type": "application/json",
         },
       ).timeout(const Duration(seconds: 50));
+//       Response response = await Dio().get(
+//   '${globals.apiurl}user',
+//   options: Options(headers: {
+//     "Accept": "application/json",
+//     "content-type": "application/json",
+//   }),
+// ).timeout(Duration(seconds: 50));
+
       if (response.statusCode == 200) {
         // print("success");
         // print(response.body.toString());
         var data = jsonDecode(response.body.toString());
+        // var data = jsonDecode(response.data);
+        // print("DATA: $data");
         for (var element in data) {
           _loadedemail.add(element['email']);
         }
@@ -231,7 +253,7 @@ class _RegisterUserState extends State<RegisterUser> {
           Digest sha1Result = sha1.convert(SHA1Password);
           print('SHA1: $sha1Result');
           Response response = await post(
-              Uri.parse('http://202.63.199.67:8082/api/user'),
+              Uri.parse('${globals.apiurl}user'),
               headers: {
                 "Accept": "application/json",
                 "content-type": "application/json"
@@ -244,9 +266,25 @@ class _RegisterUserState extends State<RegisterUser> {
                 // imageBytes: adeel.toString(),
                 'createdDate': null
               })).timeout(const Duration(seconds: 25));
+          // Response response = await Dio().post(
+          //   '${globals.apiurl}user',
+          //   options: Options(headers: {
+          //     "Accept": "application/json",
+          //     "content-type": "application/json"
+          //   }),
+          //   data: jsonEncode({
+          //     'displayName': username1,
+          //     'userName': type,
+          //     'email': email1,
+          //     'password': sha1Result.toString(),
+          //     'createdDate': null
+          //   }),
+          // );
+
           if (response.statusCode == 200) {
             var data = jsonDecode(response.body.toString());
-
+            //  var data = jsonDecode(response.data);
+            //  print("DATA: $data");
             Navigator.pushNamedAndRemoveUntil(
                 context, 'auth', (route) => false);
             snackbar.showsnackbar("$username1 Register Successfully");
@@ -905,7 +943,6 @@ class _RegisterUserState extends State<RegisterUser> {
                             placeValue,
                             _emailController.text.toString(),
                             _passController.text.toString());
-                       
                       },
                       child: const Icon(
                         Icons.person_add_alt_1_sharp,

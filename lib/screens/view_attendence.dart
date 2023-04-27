@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'globals.dart' as globals;
 import 'package:connectivity_plus/connectivity_plus.dart';
+//import 'package:dio/dio.dart';
 
 class ViewAttendence extends StatefulWidget {
   //const ViewAttendence({super.key});
@@ -137,10 +138,22 @@ class _ViewAttendenceState extends State<ViewAttendence> {
           'Authorization': 'Bearer $newtoken'
         },
       ).timeout(const Duration(seconds: 50));
+      // Response response = await Dio()
+      //     .get(
+      //       '${globals.apiurl}attendance/${newuserid}',
+      //       options: Options(headers: {
+      //         "Accept": "application/json",
+      //         "content-type": "application/json",
+      //         'Authorization': 'Bearer ${newtoken}'
+      //       }),
+      //     )
+      //     .timeout(Duration(seconds: 50));
       if (response.statusCode == 200) {
         // print("success");
         // print(response.body.toString());
         var data = jsonDecode(response.body.toString());
+        // var data = jsonDecode(response.data);
+        // print("DATA: $data");
         setState(() {
           _loadedattendence = data;
         });
@@ -170,9 +183,25 @@ class _ViewAttendenceState extends State<ViewAttendence> {
                 'email': newemail, //eve.holt@reqres.in
                 'password': newSHA1 //pistol
               })).timeout(const Duration(seconds: 25));
-
+          // Response response = await Dio()
+          //     .post(
+          //       '${globals.apiurl}token',
+          //       data: {
+          //         'email': newemail,
+          //         'password': newSHA1,
+          //       },
+          //       options: Options(
+          //         headers: {
+          //           "Accept": "application/json",
+          //           "content-type": "application/json",
+          //         },
+          //       ),
+          //     )
+          //     .timeout(const Duration(seconds: 25));
           if (response.statusCode == 200) {
             var data1 = jsonDecode(response.body.toString());
+            // var data1 = jsonDecode(response.data);
+            // print("DATA: $data1");
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -181,7 +210,8 @@ class _ViewAttendenceState extends State<ViewAttendence> {
               ),
             );
           } else {
-            snackbar.showsnackbar("Server Error Found/Failed to Load Attendence data");
+            snackbar.showsnackbar(
+                "Server Error Found/Failed to Load Attendence data");
           }
         } catch (e) {
           print(e.toString());
@@ -189,7 +219,6 @@ class _ViewAttendenceState extends State<ViewAttendence> {
       }
     } catch (e) {
       print(e.toString());
-      
     }
   }
 
@@ -311,7 +340,7 @@ class _ViewAttendenceState extends State<ViewAttendence> {
                   ],
                 ),
               ),
-              
+
               _loadedattendence.isEmpty
                   ? Column(
                       children: [
@@ -451,7 +480,6 @@ class _ViewAttendenceState extends State<ViewAttendence> {
                               padding:
                                   const EdgeInsets.only(top: 8.0, bottom: 8),
                               child: Container(
-                               
                                 margin:
                                     const EdgeInsets.only(left: 20, right: 20),
                                 child: Card(

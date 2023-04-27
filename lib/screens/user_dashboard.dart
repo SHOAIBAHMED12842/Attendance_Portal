@@ -17,6 +17,7 @@ import 'package:dropdown_search/dropdown_search.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:io';
+//import 'package:dio/dio.dart';
 
 class UserDashboard extends StatefulWidget {
   String token1 = "";
@@ -94,9 +95,25 @@ class _UserDashboardState extends State<UserDashboard> {
             'email': email, //eve.holt@reqres.in
             'password': SHA1 //pistol
           })).timeout(const Duration(seconds: 25));
-
+      // Response response = await Dio()
+      //     .post(
+      //       '${globals.apiurl}token',
+      //       data: {
+      //         'email': email,
+      //         'password': SHA1,
+      //       },
+      //       options: Options(
+      //         headers: {
+      //           "Accept": "application/json",
+      //           "content-type": "application/json",
+      //         },
+      //       ),
+      //     )
+      //     .timeout(const Duration(seconds: 25));
       if (response.statusCode == 200) {
         var data1 = jsonDecode(response.body.toString());
+        // var data1 = jsonDecode(response.data);
+        // print("DATA: $data1");
         setState(() {
           username = data1['displayName'];
         });
@@ -127,9 +144,20 @@ class _UserDashboardState extends State<UserDashboard> {
           'Authorization': 'Bearer ${token}'
         },
       ).timeout(const Duration(seconds: 50));
-
+      // Response response = await Dio()
+      //     .get(
+      //       '${globals.apiurl}attendance/${userid}',
+      //       options: Options(headers: {
+      //         "Accept": "application/json",
+      //         "content-type": "application/json",
+      //         'Authorization': 'Bearer ${token}'
+      //       }),
+      //     )
+      //     .timeout(Duration(seconds: 50));
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body.toString());
+        // var data = jsonDecode(response.data);
+        // print("DATA: $data");
         _loadedattendence = data;
         // print(_loadedattendence);
         if (_loadedattendence.isNotEmpty) {
@@ -165,7 +193,9 @@ class _UserDashboardState extends State<UserDashboard> {
             notificationServices.cancelnotification();
             notificationServices.schedulecheckoutinnotification(
                 "Check-out Alert!",
-                "Respected $username kindly mark the check-out.",clientname,time12!);
+                "Respected $username kindly mark the check-out.",
+                clientname,
+                time12!);
             notificationServices.sendNotification(
                 'Last Check-in $clientname at $time12',
                 "Kindly mark check-out before 11PM");
@@ -191,7 +221,7 @@ class _UserDashboardState extends State<UserDashboard> {
 
             notificationServices.cancelnotification();
             notificationServices.schedulecheckinnotification("Check-in Alert!",
-                "Respected $username kindly mark the check-in.",clientname);
+                "Respected $username kindly mark the check-in.", clientname);
             notificationServices.sendNotification('Last Check-out $clientname',
                 "Kindly mark check-in before 11AM");
             snackbar.showsnackbar(
@@ -211,7 +241,7 @@ class _UserDashboardState extends State<UserDashboard> {
           await prefinger.setString('CI', '3');
           notificationServices.newusernotification(username);
           snackbar.showsnackbar("$username is a new user");
-           notificationServices.sendNotification('$username Check-in required!',
+          notificationServices.sendNotification('$username Check-in required!',
               'Kindly mark check-in for the first time.');
         }
       }
@@ -477,6 +507,26 @@ class _UserDashboardState extends State<UserDashboard> {
                     'userInfo': null,
                     'clientID': clientid
                   })).timeout(const Duration(seconds: 25));
+          // Response response = await Dio().post(
+          //   '${globals.apiurl}attendance',
+          //   options: Options(headers: {
+          //     "Accept": "application/json",
+          //     "content-type": "application/json",
+          //     'Authorization': 'Bearer ${token}'
+          //   }),
+          //   data: jsonEncode({
+          //     'userID': userid,
+          //     'attendanceTime': time,
+          //     'latitude': _currentPosition!.latitude.toString(),
+          //     'longitude': _currentPosition!.longitude.toString(),
+          //     'attendanceType': "CHECK-IN",
+          //     'imageBytes': base64string.toString(),
+          //     'attendanceAddress': _currentAddress.toString(),
+          //     'userInfo': null,
+          //     'clientID': clientid
+          //   }),
+          //   //timeout: Duration(seconds: 25),
+          // );
           if (response.statusCode == 200) {
             setState(() {
               time = DateFormat("hh:mm a").format(DateTime.now());
@@ -484,7 +534,8 @@ class _UserDashboardState extends State<UserDashboard> {
               time1 = '';
               _ischeckin = true;
             });
-
+            // var data = jsonDecode(response.data);
+            // print("DATA: $data");
             snackbar.showsnackbar("$username Check-in at $time");
             notificationServices.cancelnotification();
             notificationServices.sendNotification(
@@ -561,11 +612,33 @@ class _UserDashboardState extends State<UserDashboard> {
                     'userInfo': null,
                     'clientID': clientid
                   })).timeout(const Duration(seconds: 25));
+          // Response response = await Dio().post(
+          //   '${globals.apiurl}attendance',
+          //   options: Options(headers: {
+          //     "Accept": "application/json",
+          //     "content-type": "application/json",
+          //     'Authorization': 'Bearer ${token}'
+          //   }),
+          //   data: jsonEncode({
+          //     'userID': userid,
+          //     'attendanceTime': time,
+          //     'latitude': _currentPosition!.latitude.toString(),
+          //     'longitude': _currentPosition!.longitude.toString(),
+          //     'attendanceType': "CHECK-OUT",
+          //     'imageBytes': base64string.toString(),
+          //     'attendanceAddress': _currentAddress.toString(),
+          //     'userInfo': null,
+          //     'clientID': clientid
+          //   }),
+          //   //timeout: Duration(seconds: 25),
+          // );
           if (response.statusCode == 200) {
             setState(() {
               time1 = DateFormat("hh:mm a").format(DateTime.now());
             });
             var data = jsonDecode(response.body.toString());
+            // var data = jsonDecode(response.data);
+            // print("DATA: $data");
             snackbar.showsnackbar("$username Check-out at $time1");
             notificationServices.cancelnotification();
             notificationServices.sendNotification(
@@ -613,8 +686,20 @@ class _UserDashboardState extends State<UserDashboard> {
           'Authorization': 'Bearer ${token}'
         },
       ).timeout(const Duration(seconds: 50));
+      // Response response = await Dio()
+      //     .get(
+      //       '${globals.apiurl}attendance/clients',
+      //       options: Options(headers: {
+      //         "Accept": "application/json",
+      //         "content-type": "application/json",
+      //         'Authorization': 'Bearer ${token}'
+      //       }),
+      //     )
+      //     .timeout(Duration(seconds: 50));
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body.toString());
+        // var data = jsonDecode(response.data);
+        // print("DATA: $data");
         for (var element in data) {
           client_Search_categories.add(element['fldName']);
         }
@@ -633,9 +718,25 @@ class _UserDashboardState extends State<UserDashboard> {
                 'email': email, //eve.holt@reqres.in
                 'password': SHA1 //pistol
               })).timeout(const Duration(seconds: 25));
-
+          // Response response = await Dio()
+          //     .post(
+          //       '${globals.apiurl}token',
+          //       data: {
+          //         'email': email,
+          //         'password': SHA1,
+          //       },
+          //       options: Options(
+          //         headers: {
+          //           "Accept": "application/json",
+          //           "content-type": "application/json",
+          //         },
+          //       ),
+          //     )
+          //     .timeout(const Duration(seconds: 25));
           if (response.statusCode == 200) {
             var data1 = jsonDecode(response.body.toString());
+            // var data1 = jsonDecode(response.data);
+            // print("DATA: $data1");
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -764,8 +865,11 @@ class _UserDashboardState extends State<UserDashboard> {
     if (lat != null && lng != null) {
       try {
         var response = await get(Uri.parse(url));
+        //var response = await Dio().get(url);
         if (response.statusCode == 200) {
           Map data = jsonDecode(response.body.toString());
+          //Map data = jsonDecode(response.data);
+          //print("DATA: $data");
           setState(() {
             _currentAddress = data["results"][0]["formatted_address"];
             //_currentAddress='';

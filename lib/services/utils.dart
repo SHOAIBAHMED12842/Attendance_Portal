@@ -36,13 +36,13 @@ class utilsservices {
         notificationServices.bothNotification();
       } else if (chv == '1') {
         notificationServices.cancelnotification();
-        notificationServices.schedulecheckoutinnotification(
+        notificationServices.schedulecheckoutinnotification1(
             "Check-out Alert!", "Respected $username kindly mark check-out.",clientname!,time12!);
             notificationServices.sendNotification('Last Check-in $clientname at $time12',
                 "Kindly mark check-out before 11PM"); 
       } else if (chv == '2') {
         notificationServices.cancelnotification();
-        notificationServices.schedulecheckinnotification(
+        notificationServices.schedulecheckinnotification1(
             "Check-in Alert!", "Respected $username kindly mark check-in.",clientname!);
         notificationServices.sendNotification('Last Check-out $clientname',
                 "Kindly mark check-in before 11AM");    
